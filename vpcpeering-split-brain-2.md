@@ -178,3 +178,5 @@ nc 172.32.34.147 3000
 You can now start chatting. All your messages are being sent across the channel literally!
 
 ![chat-nc.png](chat-nc.png)
+
+### Part 2: Aerospike NoSQL DB Stretch Cluster
