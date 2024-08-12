@@ -1,6 +1,6 @@
 # VPC Peering, Split Brain with Distributed Cross Region NoSQL-DB
 
-## What the Heck!
+![pairing-1.png](pairing-1.png)
 
 In this article, we are going to create a well-known split brain problem. This is where we create a network separation within a single, distributed system to observe the effects.
 
