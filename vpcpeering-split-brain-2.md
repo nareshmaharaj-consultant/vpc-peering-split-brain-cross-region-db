@@ -1,5 +1,3 @@
-Here's the complete rewritten section of your blog using markup:
-
 # VPC Peering, Split Brain with Distributed Cross Region NoSQL-DB
 
 ## What the Heck!
@@ -32,10 +30,11 @@ Open a new browser tab and select a different region. For the second region, we 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
 By following these steps, we will demonstrate the impact of a network split on a distributed, cross-region NoSQL database.
+But before that we will test our cross region connection with a simple chat app with no coding involved. 
 
 #### VPC in Region London
 
-From the console, visit the VPC Dashboard and create a new VPC named 'my-vpc-london-2' with the IPv4 CIDR block 172.32.0.0/16.
+From AWS the console, visit the VPC Dashboard and create a new VPC named 'my-vpc-london-2' with the IPv4 CIDR block 172.32.0.0/16.
 
 Next, we need to add subnets for the various availability zones and attach an internet gateway, linking these to a new routing table.
 
@@ -180,3 +179,28 @@ You can now start chatting. All your messages are being sent across the channel 
 ![chat-nc.png](chat-nc.png)
 
 ### Part 2: Aerospike NoSQL DB Stretch Cluster
+
+In this section we are going to create a 4 node stretch cluster NoSQL DB where each region shares 2 nodes each. The following diagram shows the stretch cluster. Every node interconnects with each other node. 
+Becuase of the VPC peering additional latencies may seen for replica updates although this is not a concern for this topic.
+
+![database-cross-region.png](database-cross-region.png)
+
+#### Create 6 ec2 database hosts 
+
+For each of the regions create 3 nodes and choose the VPC you created earlier, enable public IP assignments and use the same security group.
+
+#### EC2 database hosts in Region London
+
+Launch 3 x EC2 instance with the following settings:
+
+- **Image:** Rocky-8-EC2-Base-8.7-20230215.0.x86_64 ( ami-07d2b4d8d9980a125 )
+- **Instance Type:** t3a.medium ( not what you would use in production )
+- **Key Pair:** Select the key you created earlier and downloaded safely.
+- **VPC:** Select the VPC we created earlier.
+- **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
+- **Auto Assign Public IP:** In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP.
+- **Security Group:** Use the same security group from earlier.
+- **Security Group Rule:** None so far
+
+
+
