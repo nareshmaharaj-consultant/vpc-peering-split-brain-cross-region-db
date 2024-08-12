@@ -183,7 +183,7 @@ You can now start chatting. All your messages are being sent across the channel 
 In this section we are going to create a 6 node stretch cluster NoSQL DB where each region shares 3 nodes each. The following diagram shows the stretch cluster. Every node interconnects with each other node. 
 Becuase of the VPC peering additional latencies may seen for replica updates although this is not a concern for this topic.
 
-![database-cross-region2.png](database-cross-region2.png)
+![database-cross-region3.png](database-cross-region3.png)
 
 #### Create 6 ec2 database hosts 
 
@@ -216,6 +216,13 @@ Launch 3 x EC2 instance with the following settings:
 - **Security Group:** Use the same security group from earlier.
 - **Security Group Rule:** None so far
 - **Volumes:** Root Volume: 1x10GB-gp2, 1x8GB-gp3
+
+#### Install Aerospike DB
+
+Log into the each host using ssh and install Aerospike as follows.
+Note some of the comments in the file as these will represent specific changes required for each host.
+There are several automation tools that can be used here but to keep things simple and aid the learning 
+aspect we will hand craft each of the 6 nodes.
 
 
 
