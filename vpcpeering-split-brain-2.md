@@ -528,7 +528,7 @@ All nodes should be in the current roster. We're good to go.
 Recall we have 3 nodes in 2 regions and in each region all the nodes are in a single subnet, 
 so that translates to 2 racks. See the diagram at the top of Part 2: Aerospike NoSQL DB Stretch Cluster.
 
-Action: Edit the cluster so we have only 2 rack.
+Action: Edit the cluster so we have only 2 meaningful racks.
 
 ```bash
 asadm -Uadmin -Padmin
@@ -594,7 +594,7 @@ mydata   |  33|A882,A517,A70
 Number of rows: 2
 ```
 
-So we have successfully updated our racks. Don't forget to change the rack-id in the config file.
+So you have successfully updated your cross regional racks. Don't forget to change the rack-id's in your config file.
 
 
 
