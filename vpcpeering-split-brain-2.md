@@ -518,7 +518,82 @@ ip-172-33-7-44.eu-west-3.compute.internal:3000|A517 |mydata   |A882@882,A600@600
 Number of rows: 6
 ```
 
-All nodes should be on the current roster. We're good to go.
+All nodes should be on the current roster. We're good to go. <i>But wait!</I>
+ You may have noticed there are 6 racks which doesn't make much sense here. 
+Recall we have 3 nodes in 2 regions and in each region all the nodes are in a single subnet, 
+so that translates to 2 racks. See the diagram at the top of Part 2: Aerospike NoSQL DB Stretch Cluster.
+
+Action: Edit the cluster so we have only 2 rack.
+
+```bash
+asadm -Uadmin -Padmin
+
+# show the roster
+Admin+> show roster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 11:24:49 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                           Node| Node|Namespace|                          Current Roster|                          Pending Roster|                          Observed Nodes
+                                               |   ID|         |                                        |                                        |
+ip-172-32-5-239.eu-west-2.compute.internal:3000|A129 |mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.32.15.231:3000                             |A352 |mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.7.44:3000                               |A517 |mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.32.4.2:3000                                |A600 |mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.11.90:3000                              |A70  |mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.8.38:3000                               |*A882|mydata   |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2|A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+Number of rows: 6
+
+# remove the n-1 nodes from the cluster
+manage roster remove nodes A882@2 A600@1 A517@2 A352@1 A129@1 ns mydata
+
+# check the current roster should be only 1 node
+show roster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 11:25:26 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                           Node| Node|Namespace|Current|Pending|                          Observed Nodes
+                                               |   ID|         | Roster| Roster|
+ip-172-32-5-239.eu-west-2.compute.internal:3000|A129 |mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.32.15.231:3000                             |A352 |mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.7.44:3000                               |A517 |mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.32.4.2:3000                                |A600 |mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.11.90:3000                              |A70  |mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+172.33.8.38:3000                               |*A882|mydata   |A70@2  |A70@2  |A882@2,A600@1,A517@2,A352@1,A129@1,A70@2
+Number of rows: 6
+
+# change the rack ids
+manage config namespace mydata param rack-id to 32 with A129 A352 A600
+manage recluster
+info
+
+manage config namespace mydata param rack-id to 33 with A70 A517 A882
+manage recluster
+info
+
+manage roster stage observed A882@33,A600@32,A517@33,A352@32,A129@32,A70@33 ns mydata
+manage recluster
+show roster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 11:31:08 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                           Node| Node|Namespace|                                Current Roster|                                Pending Roster|                                Observed Nodes
+                                               |   ID|         |                                              |                                              |
+ip-172-32-5-239.eu-west-2.compute.internal:3000|A129 |mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+172.32.15.231:3000                             |A352 |mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+172.33.7.44:3000                               |A517 |mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+172.32.4.2:3000                                |A600 |mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+172.33.11.90:3000                              |A70  |mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+172.33.8.38:3000                               |*A882|mydata   |A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33|A882@33,A600@32,A517@33,A352@32,A129@32,A70@33
+Number of rows: 6
+
+show racks
+~Racks (2024-08-12 11:31:34 UTC)~
+Namespace|Rack|         Nodes
+         |  ID|
+mydata   |  32|A600,A352,A129
+mydata   |  33|A882,A517,A70
+Number of rows: 2
+```
+
+So we have successfully updated our racks. Don't forget to change the rack-id in the config file.
+
+
+
+
 
 
 
