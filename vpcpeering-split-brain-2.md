@@ -596,8 +596,137 @@ Number of rows: 2
 
 So you have successfully updated your cross regional racks. Don't forget to change the rack-id's in your config file.
 
+### Part 3: Insert some records
+As part of our test we need to make sure that some data is being written while we perform the split brain scenarios.
+Below is a basic application written in python that will insert some data.
+Set the following to determins how long the app should run for
 
+```python
+# Set a timeout value in seconds
+timeout = 30  # Adjust this value based on your needs
+```
 
+When installing the Aeropsike Python library you will need the following dependecies
+>python3-devel python3
+
+Here is the code:
+```python
+```python
+import aerospike
+from aerospike import exception as ex
+import sys
+import random
+import string
+from datetime import datetime, timedelta
+import time
+
+# Sleep function to pause execution for a specified number of milliseconds
+def sleep_ms(milliseconds):
+    time.sleep(milliseconds / 1000.0)
+
+# Function to generate a list of random dates within a specified range
+def generate_random_dates(num_dates):
+    start_date = datetime(2018, 1, 1)  # Start date
+    end_date = datetime(2024, 8, 31)  # End date
+    date_range = end_date - start_date  # Calculate date range
+
+    random_dates = []
+    for _ in range(num_dates):
+        random_days = random.randint(0, date_range.days)  # Generate random number of days
+        random_date = start_date + timedelta(days=random_days)  # Add random days to start date
+        random_dates.append(random_date)
+
+    return random_dates
+
+# Function to generate a random username of a given length
+def generate_username(length):
+    characters = string.ascii_letters + string.digits  # Pool of characters
+    username = ''.join(random.choice(characters) for _ in range(length))
+    return username
+
+# Function to generate a list of random colors from a predefined set
+def generate_random_colors(num_colors):
+    colors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'cyan', 'magenta']
+    random_colors = random.choices(colors, k=num_colors)
+    return random_colors
+
+# Function to generate a list of random computer names from a predefined set
+def generate_computer_names(num_computers):
+    computer_types = ['MacBook', 'ThinkPad', 'Chromebook', 'Surface', 'Latitude', 'Surface Book', 'Alienware', 'ZenBook', 'Inspiron', 'Pavilion']
+    names = random.sample(computer_types, num_computers)
+    return names
+
+# Configuration for Aerospike client
+config = {
+  'hosts': [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ],  # Aerospike cluster hosts
+  'user': "admin",
+  'password': "admin"
+}
+
+namespace = 'mydata'
+set = 'dummy'
+
+try:
+    # Connect to Aerospike client
+    client = aerospike.client(config).connect()
+    print("Connected to Server")
+
+    # Create new write policy
+    write_policy = {'key': aerospike.POLICY_KEY_SEND}
+
+    # Set a timeout value in seconds
+    timeout = 30  # Adjust this value based on your needs
+
+    # Define the start time
+    start_time = time.time()
+
+    while True:
+        # Generate a random key
+        key = (namespace, set, random.randint(0, 4095))
+
+        # Generate random data for bins
+        number_sightings = random.randint(0, 1000)
+        cc = random.randint(0, 252)
+        user = generate_username(20)
+        date_made = generate_random_dates(1)
+
+        data = {
+            'machine': generate_computer_names(1),
+            'pixels': 2 ** random.randint(12, 24),
+            'colour-scheme': generate_random_colors(2),
+            'date_mfg': date_made[0].strftime("%Y-%m-%d")
+        }
+
+        # Create the bins
+        bins = {
+            'freq': number_sightings,
+            'country_code': cc,
+            'logged_by': user,
+            'report': data,
+        }
+
+        # Put the record into the Aerospike database
+        client.put(key, bins, policy=write_policy)
+
+        # Check if the current time has exceeded the timeout
+        if time.time() - start_time > timeout:
+            print("Timeout reached. Exiting loop.")
+            break
+
+        # Sleep for 200 milliseconds
+        sleep_ms(200)
+
+    # Close the client connection
+    client.close()
+except ex.ClientError as e:
+    # Handle client errors
+    print("Error: {0} [{1}]".format(e.msg, e.code))
+    sys.exit(1)
+```
+
+Keep the app running in the background for long enough to perform the tests.
+
+### Part 3: Split Brain
 
 
 
