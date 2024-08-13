@@ -611,7 +611,6 @@ When installing the Aeropsike Python library you will need the following depende
 
 Here is the code:
 ```python
-```python
 import aerospike
 from aerospike import exception as ex
 import sys
