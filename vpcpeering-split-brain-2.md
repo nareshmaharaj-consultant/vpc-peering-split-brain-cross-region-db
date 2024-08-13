@@ -619,6 +619,9 @@ import string
 from datetime import datetime, timedelta
 import time
 
+hosts = [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ]
+run_for_sec = 60
+
 # Sleep function to pause execution for a specified number of milliseconds
 def sleep_ms(milliseconds):
     time.sleep(milliseconds / 1000.0)
@@ -657,7 +660,7 @@ def generate_computer_names(num_computers):
 
 # Configuration for Aerospike client
 config = {
-  'hosts': [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ],  # Aerospike cluster hosts
+  'hosts': hosts,  # Aerospike cluster hosts
   'user': "admin",
   'password': "admin"
 }
@@ -674,7 +677,7 @@ try:
     write_policy = {'key': aerospike.POLICY_KEY_SEND}
 
     # Set a timeout value in seconds
-    timeout = 30  # Adjust this value based on your needs
+    timeout = run_for_sec  # Adjust this value based on your needs
 
     # Define the start time
     start_time = time.time()
