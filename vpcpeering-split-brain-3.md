@@ -30,7 +30,7 @@ Open a new browser tab and select a different region. For the second region, we 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
 By following these steps, we will demonstrate the impact of a network split on a distributed, cross-region NoSQL database.
-But before that we will test our cross region connection with a simple chat app with no coding involved. 
+But before that we will test our cross region connection with a simple chat app with no coding involved.
 
 #### VPC in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿 󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥
 
@@ -180,13 +180,14 @@ You can now start chatting. All your messages are being sent across the channel 
 
 ### Part 2: Aerospike NoSQL DB Stretch Cluster
 
-In this section, we will create a 6-node stretch cluster NoSQL DB, with each region hosting 3 nodes. The following diagram illustrates the stretch cluster configuration, where every node interconnects with each other node. Due to VPC peering, additional latencies may be observed for replica updates, but this is not a concern for this topic.
+In this section we are going to create a 6 node stretch cluster NoSQL DB where each region shares 3 nodes each. The following diagram shows the stretch cluster. Every node interconnects with each other node.
+Becuase of the VPC peering additional latencies may seen for replica updates although this is not a concern for this topic.
 
 ![database-cross-region3.png](database-cross-region3.png)
 
-#### Create 6 ec2 database hosts 
+#### Create 6 ec2 database hosts
 
-For each region, create three nodes. Select the VPC you previously set up, enable public IP assignments, and use the same security group.
+For each of the regions create 3 nodes and choose the VPC you created earlier, enable public IP assignments and use the same security group.
 
 #### EC2 database hosts in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 
@@ -218,12 +219,16 @@ Launch 3 x EC2 instance with the following settings:
 
 #### Install Aerospike DB
 
-Log into each host in a single region using SSH and install Aerospike. Note some of the comments in the file as these will represent specific changes required for each host. Although there are several automation tools available, we will manually configure each of the six nodes to keep things simple and aid learning.
 
-If you are interested in knowing more about Aerospike, visit the [Developer website](https://aerospike.com/developer/).
+Log into the each host in a singl region using ssh and install Aerospike as follows.
+Note some of the comments in the file as these will represent specific changes required for each host.
+There are several automation tools that can be used here but to keep things simple and aid the learning
+aspect we will hand craft each of the 6 nodes.
 
-- If you have a license file, also known as a feature file, copy this across to the host.
-- SSH into each host machine.
+If you are interested in knowing more about Aerospike visit the [Developer website](https://aerospike.com/developer/).
+
+- If you have a license file also knows as a feature file copy this across to the host.
+- ssh each into the host machine
 
 EC2 database hosts in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 
@@ -388,8 +393,9 @@ sudo systemctl status aerospike
 
 #### ACL User Authentication
 
-You can run the following command just once on a single host to enable adding database records. Typically, you would set up different users and roles for such tasks, but for simplicity, we are using the `admin` role (which is not recommended for production environments).
-
+You can run the following command just once on a single host. This will allow us to add database records.
+Usually you would have different users and roles for this. But here we are
+using admin. ( not recommended )
 
 ```bash 
 asadm -Uadmin -Padmin -e "enable; manage acl grant user admin roles read-write"
@@ -397,8 +403,7 @@ asadm -Uadmin -Padmin -e "enable; manage acl grant user admin roles sys-admin"
 asadm -Uadmin -Padmin -e "enable; show user"
 ```
 
-To get a view of your current Aerospike cluster, including the nodes you've added, you can run the following command. At this stage, you should have only added the three nodes in the London region.
-
+Run the following and most typical command to see a view of the current cluster. So far we have only added the 3 nodes in London.
 ```bash
 asadm -e i -Uadmin -Padmin
 
@@ -433,7 +438,7 @@ mydata   |                                               |    |      |    0.000 
 Number of rows: 3
 ```
 
-Congratulations! You should now see all six nodes in your stretch cluster. This setup includes the three nodes you configured in the London region and the three nodes in the Paris region.
+You should now see all 6 nodes in a stretch cluster - how cool.
 
 ```bash
 sadm -e i -Uadmin -Padmin
@@ -478,7 +483,7 @@ mydata   |                                              |    |      |    0.000  
 
 #### Strong Consistency
 
-To enable Strong Consistency (SC) rules in Aerospike, you will need to run a few administrative commands. This ensures that your database maintains strict consistency across all nodes in the cluster.
+To enable the SC rules you will need to run some admin commands as below
 
 ```bash
 enable
@@ -514,15 +519,14 @@ Number of rows: 6
 ```
 
 #### Edit RACK-IDs
-All six nodes (three in London and three in Paris) should appear in the output, indicating they are part of the current cluster roster and are correctly configured.
+All nodes should be in the current roster. We're good to go.
 
 <i>But wait!</I>
 
 
-It appears there are currently six racks displayed in your Aerospike cluster configuration, which doesn’t align with your setup of three nodes per region and two regions. Since all nodes in each region are in a single subnet, they should be grouped into two meaningful racks.
-
-To correct this, you need to edit the cluster configuration to consolidate the racks into the appropriate number.
- See the diagram at the top of Part 2: Aerospike NoSQL DB Stretch Cluster.
+You may have noticed there are 6 racks which doesn't make much sense here.
+Recall we have 3 nodes in 2 regions and in each region all the nodes are in a single subnet,
+so that translates to 2 racks. See the diagram at the top of Part 2: Aerospike NoSQL DB Stretch Cluster.
 
 Action: Edit the cluster so we have only 2 meaningful racks.
 
@@ -590,17 +594,13 @@ mydata   |  33|A882,A517,A70
 Number of rows: 2
 ```
 
-Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two meaningful racks—one for each region.
-Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This ensures that the configuration aligns with your intended architecture.
+So you have successfully updated your cross regional racks. Don't forget to change the rack-id's in your config file.
 
 ### Part 3: Insert some records
-To ensure that data is being written to your Aerospike database while performing split brain scenarios, you can use a basic Python application to insert data. This will help you verify the cluster's behavior and data consistency under test conditions.
-Below is a simple Python script that inserts some data into the Aerospike database. This script uses the `aerospike` client library to connect to the cluster and perform data operations.
+As part of the test make sure some data is being written to the DB while we perform the split brain scenarios.
+Below is a basic application written in python that will insert some data.
 
-
-When you run the provided Python script to insert data into your Aerospike database, the data should be structured and stored as follows. Here’s an example of how the inserted data might look:
-
-Create an additional ec2 host in one of the subnets to run your code.
+The data should look something like:
 
 ```text
 aql> select * from mydata.dummy limit 10
@@ -620,15 +620,13 @@ aql> select * from mydata.dummy limit 10
 +------+------+--------------+------------------------+--------------------------------------------------------------------------------------------------------------------+
 10 rows in set (0.033 secs)
 ```
-To control how long your Python application should run and insert data into the Aerospike database, modify the script's timeout execution period. This allows you to set a specific duration for the script to run.
-
+Set the following to determine how long the app should run for.
 ```python
 # Set a timeout value in seconds
 timeout = 30  # Adjust this value based on your needs
 ```
 
-To successfully install the Aerospike Python client library, you need to ensure that certain dependencies are met.
-
+When installing the Aeropsike Python library you will need the following dependecies.
 > python3-devel <br>
 > python3
 
@@ -749,7 +747,7 @@ except ex.ClientError as e:
     sys.exit(1)
 ```
 
-Ensure that your Python application continues to run in the background for an extended period, allowing you to perform tests and simulate various scenarios.
+Keep the app running in the background for long enough to perform the tests.
 
 ### Part 3: Split Brain
 
