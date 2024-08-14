@@ -901,7 +901,155 @@ mydata   |                                              |    |      |    0.000  
 Number of rows: 6
 ```
 
+The client application now based in London writes a couple of records for the partitions it has befre failing:
 
+```jsunicoderegexp
+python3.6 aerospike-client.py
+Connected to Server
+Error: Node not found for partition mydata:3773 [-8]
+```
+
+London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 16:33:08 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                                |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                                |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.33.11.90:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.7.44:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.8.38:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                                |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.32.4.2:3000                                 |  32|     2|    0.000  |483.000  |156.000  |172.000  |  155.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.5.239:3000                               |  32|     2|    0.000  |487.000  |179.000  |150.000  |  158.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-32-15-231.eu-west-2.compute.internal:3000|  32|     2|    0.000  |454.000  |147.000  |160.000  |  147.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                                |    |      |    0.000  |  1.424 K|482.000  |482.000  |  460.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+
+Paris 🇫🇷 - we dont expect any record count changes as we cannot reach Paris
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 16:34:00 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                              |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                              |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.32.15.231:3000                            |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.4.2:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.5.239:3000                             |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                              |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.33.11.90:3000                             |  33|     2|    0.000  |471.000  |165.000  |156.000  |  150.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.8.38:3000                              |  33|     2|    0.000  |463.000  |153.000  |154.000  |  156.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|  33|     2|    0.000  |466.000  |142.000  |150.000  |  174.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                              |    |      |    0.000  |  1.400 K|460.000  |460.000  |  480.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+
+So its an even split and each cluster is up and running but only for the partitions it owns.
+
+This is clearly evident in the show pmap command - showing 50% of the partitions belong to the Paris region.
+
+With the network split now in place, we can observe the partition distribution and cluster status using the `show pmap` command in `asadm`. This command provides insight into how partitions are distributed across the cluster nodes.
+
+**Key Observations:**
+
+- **Even Split:** Each region is operating independently, handling only the partitions it owns. This is evident from the `show pmap` command output, which reflects the partition ownership across the nodes.
+
+- **Partition Ownership:** The `show pmap` command reveals that each region's nodes manage 50% of the total partitions. This means that Paris handles half of the partitions, and London handles the other half.
+
+Paris 🇫🇷
+```text
+Admin> show pmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~Partition Map Analysis (2024-08-14 16:35:12 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node| Cluster Key|~~~~~~~~~~~~Partitions~~~~~~~~~~~~
+         |                                              |            |Primary|Secondary|Unavailable|Dead
+~~       |172.32.15.231:3000                            |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.4.2:3000                               |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.5.239:3000                             |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |                                              |            |     ~~|       ~~|         ~~|  ~~
+mydata   |172.33.11.90:3000                             |3CF08B51D327|    682|      700|       2048|   0
+mydata   |172.33.8.38:3000                              |3CF08B51D327|    683|      669|       2048|   0
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|3CF08B51D327|    683|      679|       2048|   0
+mydata   |                                              |            |   2048|     2048|       6144|   0
+Number of rows: 6
+```
+
+### Summary
+
+- **Partition Distribution:**
+  - The `show pmap` command confirms that the partitions are evenly split between the Paris and London regions. Each region’s nodes manage an equal share of the partitions, which aligns with the network isolation we’ve implemented.
+
+- **Cluster Operation:**
+  - Both clusters (Paris and London) are fully operational but only for the partitions they currently own. This demonstrates how partition ownership and data distribution are maintained even during a network split.
+
+By analyzing this command output, it’s clear that each subcluster is functioning correctly within its partition scope, illustrating the impact of the network partition on the Aerospike database’s partition management.
+
+#### Restoring Network Partition Configuration
+
+To resolve the network partition and restore full connectivity, you need to undo the previous security group rule changes and set the inbound rules back to allow traffic from all sources (`0.0.0.0/0`).
+- **Partition Map:**
+  - After removing the restrictions, the `show pmap` command should show all 4096 partitions being managed correctly across the cluster, indicating that the data is now fully distributed and accessible.
+
+- **Node Communication:**
+  - All nodes should be active and successfully heartbeating with each other, confirming that the cluster is back to a stable, single state.
+
+By following these steps, you have restored the Aerospike cluster to its full operational state, ensuring that all nodes can communicate and that data distribution is consistent across the entire system.
+
+```text
+Admin> show pmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~Partition Map Analysis (2024-08-14 16:46:53 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node| Cluster Key|~~~~~~~~~~~~Partitions~~~~~~~~~~~~
+         |                                              |            |Primary|Secondary|Unavailable|Dead
+mydata   |172.32.15.231:3000                            |4A4F30116D58|    683|      682|          0|   0
+mydata   |172.32.4.2:3000                               |4A4F30116D58|    683|      683|          0|   0
+mydata   |172.32.5.239:3000                             |4A4F30116D58|    682|      683|          0|   0
+mydata   |172.33.11.90:3000                             |4A4F30116D58|    682|      683|          0|   0
+mydata   |172.33.8.38:3000                              |4A4F30116D58|    683|      683|          0|   0
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|4A4F30116D58|    683|      682|          0|   0
+mydata   |                                              |            |   4096|     4096|          0|   0
+Number of rows: 6
+
+Admin> i
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 16:46:58 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~Pending Migrates~
+         |                                              |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|       Tx|       Rx
+mydata   |172.32.15.231:3000                            |  32|     2|    0.000  |434.000  |147.000  |147.000  |  140.000  |0.000  |0.000  |    0.000  |431.000  |102.000
+mydata   |172.32.4.2:3000                               |  32|     2|    0.000  |461.000  |156.000  |155.000  |  150.000  |0.000  |0.000  |    0.000  |423.000  |593.000
+mydata   |172.32.5.239:3000                             |  32|     2|    0.000  |434.000  |179.000  |158.000  |   97.000  |0.000  |0.000  |    0.000  |425.000  |593.000
+mydata   |172.33.11.90:3000                             |  33|     2|    0.000  |436.000  |165.000  |150.000  |  121.000  |0.000  |0.000  |    0.000  |440.000  |422.000
+mydata   |172.33.8.38:3000                              |  33|     2|    0.000  |446.000  |153.000  |156.000  |  137.000  |0.000  |0.000  |    0.000  |426.000  |440.000
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|  33|     2|    0.000  |446.000  |142.000  |174.000  |  130.000  |0.000  |0.000  |    0.000  |425.000  |418.000
+mydata   |                                              |    |      |    0.000  |  2.657 K|942.000  |940.000  |  775.000  |0.000  |0.000  |    0.000  |  2.570 K|  2.568 K
+Number of rows: 6
+```
+---
+### Understanding Partition Management in Strong Consistency
+
+By understanding how Aerospike maintains partitions under Strong Consistency (SC), application developers and solution architects can design their systems to handle network partitions and maintain data integrity effectively. Here's how this knowledge can be applied:
+
+#### Key Points About Aerospike’s Partition Management
+
+1. **Strong Consistency Guarantees:**
+  - Aerospike’s SC mode ensures that all writes to a single record are applied in a specific order, sequentially. This means that even in a network partition or split-brain scenario, data consistency is preserved as long as the partition ownership and quorum requirements are met.
+
+2. **Partition Ownership:**
+  - Each node in the Aerospike cluster manages a portion of the partitions. During a network split, nodes in each region will only manage the partitions they own. This partition ownership helps ensure that data is consistently handled within each partition subset.
+
+3. **Data Distribution:**
+  - In a distributed system like Aerospike, data is divided into partitions and distributed across nodes. During a split, nodes in each region will continue to manage and serve the partitions they own. This partition-centric approach helps in maintaining operational continuity even when parts of the network are isolated.
+
+4. **Handling Network Partitions:**
+  - When designing systems with Aerospike, it's important to account for the possibility of network partitions. Understanding how partitions are managed and how strong consistency is maintained allows for better planning and mitigation strategies to handle such scenarios.
+
+5. **Application Design Considerations:**
+  - **Data Redundancy:** Ensure that data is replicated across multiple nodes to prevent data loss in case of node or region failures.
+  - **Quorum Configuration:** Configure the quorum settings to balance between performance and data consistency, considering the potential for network partitions.
+  - **Monitoring and Alerts:** Implement robust monitoring and alerting mechanisms to detect and respond to network partitions and split-brain scenarios promptly.
+
+6. **Solution Architecture:**
+  - Design the architecture to minimize the impact of network partitions. This includes configuring the network and security settings to control access between regions and ensuring that the system can handle partitions gracefully without significant data inconsistencies.
+
+By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
+
+Hope you have enjoyed reading this article and learnt something new.
 
 
 
