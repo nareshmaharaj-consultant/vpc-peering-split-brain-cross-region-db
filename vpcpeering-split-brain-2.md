@@ -630,7 +630,8 @@ timeout = 30  # Adjust this value based on your needs
 To successfully install the Aerospike Python client library, you need to ensure that certain dependencies are met.
 
 > python3-devel <br>
-> python3
+> python3 <br>
+> make
 
 Here is the code:
 ```python
@@ -811,7 +812,7 @@ This configuration effectively simulates a network split where the London subclu
 
 By examining these details, it becomes evident that the number of records in the London nodes has been reduced by half following the network separation.
 
-Before 940 records:
+Before 940 records 🏴󠁧󠁢󠁥󠁮󠁧󠁿 
 ```text
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:17:18 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
@@ -827,7 +828,7 @@ mydata   |                                                |    |      |    0.000
 Number of rows: 6
 ```
 
-After 470 records:
+After 470 records 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 ```text
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:33:09 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
@@ -844,7 +845,7 @@ mydata   |                                                |    |      |    0.000
 Number of rows: 6
 ```
 
-As we can see, the Paris nodes have not experienced any changes in the number of records or their status. This is because the London ports are still open to sources `0.0.0.0/0`, allowing communication between the regions.
+As we can see, the Paris 🇫🇷 nodes have not experienced any changes in the number of records or their status. This is because the London ports are still open to sources `0.0.0.0/0`, allowing communication between the regions.
 ```text
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:53:59 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                          Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
@@ -861,6 +862,50 @@ Number of rows: 6
 
 Admin>
 ```
+
+Modify the London security group inbound rules to allow traffic only from the London subnet and block all external traffic, including traffic from Paris:
+By isolating London from Paris, you have successfully created a full split-brain scenario. This setup helps in understanding how such network partitions affect data distribution and cluster communication in a distributed database environment like Aerospike.
+
+Let's see the results from asadm Aerospike CLI managemnt tool.
+
+London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 16:18:29 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                                |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                                |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.33.11.90:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.7.44:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.8.38:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                                |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.32.4.2:3000                                 |  32|     2|    0.000  |481.000  |155.000  |171.000  |  155.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.5.239:3000                               |  32|     2|    0.000  |485.000  |178.000  |149.000  |  158.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-32-15-231.eu-west-2.compute.internal:3000|  32|     2|    0.000  |454.000  |147.000  |160.000  |  147.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                                |    |      |    0.000  |  1.420 K|480.000  |480.000  |  460.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+Paris 🇫🇷
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 16:18:16 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                              |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                              |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.32.15.231:3000                            |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.4.2:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.5.239:3000                             |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                              |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.33.11.90:3000                             |  33|     2|    0.000  |471.000  |165.000  |156.000  |  150.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.8.38:3000                              |  33|     2|    0.000  |463.000  |153.000  |154.000  |  156.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|  33|     2|    0.000  |466.000  |142.000  |150.000  |  174.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                              |    |      |    0.000  |  1.400 K|460.000  |460.000  |  480.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+
+
+
+
+
+
 
 
 
