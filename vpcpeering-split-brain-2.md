@@ -753,8 +753,114 @@ Ensure that your Python application continues to run in the background for an ex
 
 ### Part 3: Split Brain
 
+#### Understanding Strong Consistency in Aerospike
 
+In the context of database systems, [**Strong Consistency (SC)**](https://aerospike.com/docs/server/guide/consistency#consistency-guarantees) is a critical concept, especially when dealing with scenarios such as split-brain conditions. A split-brain scenario occurs when a network partition divides the database cluster into two or more partitions, potentially leading to data inconsistency.
 
+Aerospike's Strong Consistency mode is designed to address such challenges by ensuring that all writes to a single record are applied in a strict, sequential order. This guarantees that no writes are reordered or skipped, and thus, no data is lost.
+
+Here’s a deeper look at how Strong Consistency works and its importance:
+
+#### Key Features of Strong Consistency
+
+1. **Sequential Writes:**
+  - All writes to a single record are applied in the order they are received. This ensures that the state of the record is predictable and consistent across all nodes in the cluster.
+
+2. **No Data Loss:**
+  - Aerospike SC mode ensures that data is not lost, even in the event of network partitions or node failures. However, there are rare exceptions, such as simultaneous hardware failures on different nodes, which could potentially result in data loss.
+
+3. **Quorum-based Commit:**
+  - Writes are only considered successful when a quorum of nodes acknowledge the write operation. This means that a majority of nodes must agree on the write, ensuring data consistency even in the presence of node failures or network issues.
+
+4. **Immediate Consistency:**
+  - As soon as a write operation is confirmed, all subsequent read operations will reflect this write. This contrasts with eventual consistency, where reads might temporarily return stale data.
+
+#### Evaluating Strong Consistency in Split-Brain Scenarios
+
+During a split-brain scenario, the network partition can lead to isolated clusters of nodes. Evaluating the behavior of Aerospike under such conditions is crucial to understanding the robustness of its SC mode. Here’s how SC mode helps:
+
+1. **Write Operations:**
+  - In a split-brain scenario, writes can only be processed by the nodes that form a majority partition. This prevents conflicting writes to the same record from different partitions, maintaining data integrity.
+
+2. **Read Operations:**
+  - Reads will always return the most recent write that was acknowledged by a majority of nodes. If a node is isolated in a minority partition, it will not serve stale data to clients.
+
+3. **Reconciliation Post-Recovery:**
+  - Once the network partition is resolved, Aerospike uses SC mode to reconcile any divergent states. The system ensures that the state of records is consistent across all nodes, based on the majority writes that were committed during the partition.
+
+#### How to create the Split Brain
+
+The image below shows the overall network has been split between the 2 regions and their corresponding subnets. Within each subnet, the subcluster now has its own view of the world. Each subcluster is communicating only with nodes inside its own subnet.
+
+![split-network-1.png](split-network-1.png)
+
+To simulate a network split between regions in AWS, Log into the Paris AWS Console. Observe that the source is set to `0.0.0.0/0`, which means that connections can be established from anywhere.
+This configuration allows traffic from any IP address to access these ports.
+
+![sg-paris-no-split.png](sg-paris-no-split.png)
+
+To simulate a network split, you would need to restrict the traffic so that only nodes within the same subnet or region can communicate. For example, you can change the source to the specific CIDR block of your subnet or reference the security group itself.
+By applying these changes, we ensure that:
+
+- Nodes in the Paris region can communicate with nodes in both the Paris and London regions.
+- Nodes in the London region can only communicate with other nodes within the London region.
+
+This configuration effectively simulates a network split where the London subcluster is isolated from Paris, while Paris can still interact with both regions.
+
+![sg-paris-split.png](sg-paris-split.png)
+
+By examining these details, it becomes evident that the number of records in the London nodes has been reduced by half following the network separation.
+
+Before 940 records:
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:17:18 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                                |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                                |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+mydata   |172.32.4.2:3000                                 |  32|     2|    0.000  |165.000  | 92.000  | 73.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.5.239:3000                               |  32|     2|    0.000  |162.000  | 88.000  | 74.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.11.90:3000                               |  33|     2|    0.000  |148.000  | 77.000  | 71.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.7.44:3000                                |  33|     2|    0.000  |152.000  | 65.000  | 87.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.8.38:3000                                |  33|     2|    0.000  |170.000  | 82.000  | 88.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-32-15-231.eu-west-2.compute.internal:3000|  32|     2|    0.000  |143.000  | 66.000  | 77.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                                |    |      |    0.000  |940.000  |470.000  |470.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+
+After 470 records:
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:33:09 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                                |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                                |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.33.11.90:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.7.44:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.33.8.38:3000                                |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                                |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.32.4.2:3000                                 |  32|     2|    0.000  |165.000  | 92.000  | 73.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.5.239:3000                               |  32|     2|    0.000  |162.000  | 88.000  | 74.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-32-15-231.eu-west-2.compute.internal:3000|  32|     2|    0.000  |143.000  | 66.000  | 77.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                                |    |      |    0.000  |470.000  |246.000  |224.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+```
+
+As we can see, the Paris nodes have not experienced any changes in the number of records or their status. This is because the London ports are still open to sources `0.0.0.0/0`, allowing communication between the regions.
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-14 15:53:59 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                          Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                              |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                              |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+mydata   |172.32.15.231:3000                            |  32|     2|    0.000  |143.000  | 66.000  | 77.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.4.2:3000                               |  32|     2|    0.000  |165.000  | 92.000  | 73.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.5.239:3000                             |  32|     2|    0.000  |162.000  | 88.000  | 74.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.11.90:3000                             |  33|     2|    0.000  |148.000  | 77.000  | 71.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.8.38:3000                              |  33|     2|    0.000  |170.000  | 82.000  | 88.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-7-44.eu-west-3.compute.internal:3000|  33|     2|    0.000  |152.000  | 65.000  | 87.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                              |    |      |    0.000  |940.000  |470.000  |470.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 6
+
+Admin>
+```
 
 
 
