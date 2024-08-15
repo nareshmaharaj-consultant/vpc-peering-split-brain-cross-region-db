@@ -14,6 +14,8 @@ While this article focuses on an equal partition split, it's also crucial to tes
 ### [Part 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
 ### [Part 3 - Python Application - Test Data](#data-section)
 ### [Part 4 - Split Brain](#split-brain-section)
+### [Part 5 - Partition Management Strong Consistency](#partition-management-section)
+### [Finally - What's next](#final-section)
 
 ### Overview
 
@@ -982,9 +984,9 @@ To summarise, we have an even split of nodes in each sub-cluster and each is up 
 
 **Key Observations:**
 
-- **Even Split:** Each region is operating independently, handling only the partitions it owns. This is evident from the `show pmap` command output, which reflects the partition ownership across the nodes.
+- **Even Split:** Each region is operating independently, handling only the partitions it owns. 
 
-- **Partition Ownership:** The `show pmap` command reveals that each region's nodes manage 50% of the total partitions. This means that Paris handles half of the partitions, and London handles the other half.
+- **Partition Ownership:** Each region manages 50% of the total partitions. This means that Paris handles half of the partitions, and London handles the other half.
 
 Paris 🇫🇷
 ```text
@@ -1015,14 +1017,14 @@ By analyzing this command output, it’s clear that each subcluster is functioni
 
 #### Restoring Network Partition Configuration
 
-To resolve the network partition and restore full connectivity, you need to undo the previous security group rule changes and set the inbound rules back to allow traffic from all sources (`0.0.0.0/0`).
+To resolve the network partition and restore full connectivity, you need to undo the previous security group rule changes made and set the inbound rules back to allow traffic from all sources (`0.0.0.0/0`).
 - **Partition Map:**
   - After removing the restrictions, the `show pmap` command should show all 4096 partitions being managed correctly across the cluster, indicating that the data is now fully distributed and accessible.
 
 - **Node Communication:**
-  - All nodes should be active and successfully heartbeating with each other, confirming that the cluster is back to a stable, single state.
+  - All nodes should be active and successfully heartbeating with each other.
 
-By following these steps, you have restored the Aerospike cluster to its full operational state, ensuring that all nodes can communicate and that data distribution is consistent across the entire system.
+By following these steps, you have restored the Aerospike cluster to it's full operational state, ensuring all nodes can communicate and data distribution is consistent across the entire system.
 
 ```text
 Admin> show pmap
@@ -1052,7 +1054,7 @@ mydata   |                                              |    |      |    0.000  
 Number of rows: 6
 ```
 ---
-### Understanding Partition Management in Strong Consistency
+<p id="partition-management-section"><h3>Part 5: Understanding Partition Management in Strong Consistency</h3></p>
 
 By understanding how Aerospike maintains partitions under Strong Consistency (SC), application developers and solution architects can design their systems to handle network partitions and maintain data integrity effectively. Here's how this knowledge can be applied:
 
@@ -1079,6 +1081,9 @@ By understanding how Aerospike maintains partitions under Strong Consistency (SC
   - Design the architecture to minimize the impact of network partitions. This includes configuring the network and security settings to control access between regions and ensuring that the system can handle partitions gracefully without significant data inconsistencies.
 
 By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
+
+<p id="final-section"><h3>Finally: What's next</h3></p>
+.
 
 Hope you have enjoyed reading this article and learnt something new.
 
