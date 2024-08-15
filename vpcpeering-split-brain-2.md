@@ -819,6 +819,12 @@ During a split-brain scenario, the network partition can lead to isolated cluste
 
 #### How to create the Split Brain
 
+Here is an illustration of a split brain scenario in a distributed data system.
+
+![split-brain-1.png](split-brain-1.png)
+
+This image depicts how two halves of a data system (Paris Region and London Region) might split up and start operating independently due to network separation.
+
 The image below shows the overall network has been split between the 2 regions and their corresponding subnets. Within each subnet, the subcluster now has its own view of the world. Each subcluster is communicating only with nodes inside its own subnet.
 
 ![split-network-1.png](split-network-1.png)
