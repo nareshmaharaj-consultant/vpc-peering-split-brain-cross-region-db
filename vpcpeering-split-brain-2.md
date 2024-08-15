@@ -10,14 +10,16 @@ By intentionally creating a network split, we can observe how the system handles
 Brief Note on Unequal Partition Splits:
 While this article focuses on an equal partition split, it's also crucial to test unequal splits. In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. These scenarios help in designing resilient systems that can handle various partitioning cases effectively.
 
-### [Part 1 - Simple cross-region messaging application](#chat-section)
-### [Part 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
-### [Part 3 - Python Application - Test Data](#data-section)
-### [Part 4 - Split Brain](#split-brain-section)
-### [Part 5 - Partition Management Strong Consistency](#partition-management-section)
+I've divided the article into five separate sections for easier reading. However, if you have the time, you can read it continuously for a more seamless experience.
+
+### [Day 1 - Simple cross-region messaging application](#chat-section)
+### [Day 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
+### [Day 3 - Python Application - Test Data](#data-section)
+### [Day 4 - Split Brain](#split-brain-section)
+### [Day 5 - Partition Management Strong Consistency](#partition-management-section)
 ### [Finally - What's next](#final-section)
 
-### Overview
+## Overview
 
 This is what we plan to do.
 
@@ -30,7 +32,7 @@ This is what we plan to do.
 7. **Enforce a Network Split:** Create the split brain scenario.
 8. **Evaluate the Results:** Analyze the outcomes.
 
-<p id="chat-section"><h3>Part 1: Talking Cross Region</h3></p>
+<p id="chat-section"><h2>Day 1: Talking Cross Region</h2></p>
 
 #### Selecting Our 2 Regions
 
@@ -194,7 +196,7 @@ You can now start chatting as all your messages are being sent across the channe
 
 ![chat-nc.png](chat-nc.png)
 
-<p id="stretch-cluster-section"><h3>Part 2: Aerospike NoSQL DB Stretch Cluster</h3></p>
+<p id="stretch-cluster-section"><h2>Day 2: Aerospike NoSQL DB Stretch Cluster</h2></p>
 
 In this section, we will create a 6-node stretch cluster NoSQL DB, with each region hosting 3 nodes. The following diagram illustrates the stretch cluster configuration, where every node interconnects with each other node. Due to VPC peering, additional latencies may be observed for replica updates, but this is not a concern for this topic.
 
@@ -618,7 +620,7 @@ Number of rows: 2
 Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two logical racks—one for each region.
 Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This ensures that the configuration aligns with your intended architecture.
 
-<p id="data-section"><h3>Part 3: Insert some records</h3></p>
+<p id="data-section"><h2>Day 3: Insert some records</h2></p>
 
 To ensure that data is being written to your Aerospike database while performing split brain scenarios, you can use a basic Python application to insert data. This will help you verify the cluster's behavior and data consistency under test conditions.
 Below is a simple Python script that inserts some data into the Aerospike database. This script uses the `aerospike` client library to connect to the cluster and perform data operations.
@@ -782,7 +784,7 @@ except ex.ClientError as e:
 
 Ensure that your Python application continues to run in the background for an extended period, allowing you to perform tests and simulate various scenarios.
 
-<p id="split-brain-section"><h3>Part 4: Split Brain</h3></p>
+<p id="split-brain-section"><h2>Day 4: Split Brain</h2></p>
 
 Here is an illustration of a split brain scenario in a distributed data system.
 This image depicts how two halves of a data system (Paris Region and London Region) might split up and start operating independently due to network separation.
@@ -1054,7 +1056,7 @@ mydata   |                                              |    |      |    0.000  
 Number of rows: 6
 ```
 ---
-<p id="partition-management-section"><h3>Part 5: Understanding Partition Management in Strong Consistency</h3></p>
+<p id="partition-management-section"><h2>Day 5: Understanding Partition Management in Strong Consistency</h2></p>
 
 By understanding how Aerospike maintains partitions under Strong Consistency (SC), application developers and solution architects can design their systems to handle network partitions and maintain data integrity effectively. Here's how this knowledge can be applied:
 
@@ -1082,7 +1084,7 @@ By understanding how Aerospike maintains partitions under Strong Consistency (SC
 
 By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
 
-<p id="final-section"><h3>Finally: What's next</h3></p>
+<p id="final-section"><h2>Finally: What's next</h2></p>
 
 ### Exploring Different Network Partition Scenarios
 
