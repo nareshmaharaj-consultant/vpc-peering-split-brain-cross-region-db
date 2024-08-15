@@ -835,7 +835,7 @@ This configuration allows traffic from any IP address to access these ports.
 ![sg-paris-no-split.png](sg-paris-no-split.png)
 
 To simulate a network split, you would need to restrict the traffic so that only nodes within the same subnet or region can communicate. For example, you can change the source to the specific CIDR block of your subnet or reference the security group itself.
-By applying these changes, we ensure that:
+By applying these changes, will ensure that:
 
 - Nodes in the Paris region can communicate with nodes in both the Paris and London regions.
 - Nodes in the London region can only communicate with other nodes within the London region.
@@ -844,7 +844,7 @@ This configuration effectively simulates a network split where the London subclu
 
 ![sg-paris-split.png](sg-paris-split.png)
 
-By examining these details, it becomes evident that the number of records in the London nodes has been reduced by half following the network separation.
+By examining these details, it becomes evident that the number of records in London has been reduced by half following the network separation.
 
 Before 940 records 🏴󠁧󠁢󠁥󠁮󠁧󠁿 
 ```text
@@ -896,11 +896,12 @@ Number of rows: 6
 
 Admin>
 ```
+Run your Python application from a subnet in London to simulate more inbound data from another region. Recall our previous data was created from Paris.
 
-Modify the London security group inbound rules to allow traffic only from the London subnet and block all external traffic, including traffic from Paris:
+Modify the London security group inbound rules to allow traffic only from the London subnet and block all external traffic, including traffic from Paris.
 By isolating London from Paris, you have successfully created a full split-brain scenario. This setup helps in understanding how such network partitions affect data distribution and cluster communication in a distributed database environment like Aerospike.
 
-Let's see the results from asadm Aerospike CLI managemnt tool.
+Let's see the results from `asadm`, Aerospike CLI managemnt tool.
 
 London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 ```text
@@ -935,7 +936,7 @@ mydata   |                                              |    |      |    0.000  
 Number of rows: 6
 ```
 
-The client application now based in London writes a couple of records for the partitions it has befre failing:
+Run the client application based in London now we have a full network partition. Notice how it writes a couple of records for the partitions it has before failing.
 
 ```jsunicoderegexp
 python3.6 aerospike-client.py
@@ -977,11 +978,7 @@ mydata   |                                              |    |      |    0.000  
 Number of rows: 6
 ```
 
-So its an even split and each cluster is up and running but only for the partitions it owns.
-
-This is clearly evident in the show pmap command - showing 50% of the partitions belong to the Paris region.
-
-With the network split now in place, we can observe the partition distribution and cluster status using the `show pmap` command in `asadm`. This command provides insight into how partitions are distributed across the cluster nodes.
+To summarise, we have an even split of nodes in each sub-cluster and each is up and running but only for the partitions it owns.
 
 **Key Observations:**
 
