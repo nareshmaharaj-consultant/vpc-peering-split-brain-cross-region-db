@@ -784,6 +784,12 @@ Ensure that your Python application continues to run in the background for an ex
 
 <p id="split-brain-section"><h3>Part 4: Split Brain</h3></p>
 
+Here is an illustration of a split brain scenario in a distributed data system.
+This image depicts how two halves of a data system (Paris Region and London Region) might split up and start operating independently due to network separation.
+Some might even think thats cool!
+
+![split-brain-1.png](split-brain-1.png)
+
 #### Understanding Strong Consistency in Aerospike
 
 In the context of database systems, [**Strong Consistency (SC)**](https://aerospike.com/docs/server/guide/consistency#consistency-guarantees) is a critical concept, especially when dealing with scenarios such as split-brain conditions. A split-brain scenario occurs when a network partition divides the database cluster into two or more partitions, potentially leading to data inconsistency.
@@ -820,12 +826,6 @@ During a split-brain scenario, the network partition can lead to isolated cluste
   - Once the network partition is resolved, Aerospike uses SC mode to reconcile any divergent states. The system ensures that the state of records is consistent across all nodes, based on the majority writes that were committed during the partition.
 
 #### How to create the Split Brain
-
-Here is an illustration of a split brain scenario in a distributed data system.
-
-![split-brain-1.png](split-brain-1.png)
-
-This image depicts how two halves of a data system (Paris Region and London Region) might split up and start operating independently due to network separation.
 
 The image below shows the overall network has been split between the 2 regions and their corresponding subnets. Within each subnet, the subcluster now has its own view of the world. Each subcluster is communicating only with nodes inside its own subnet.
 
