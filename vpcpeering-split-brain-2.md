@@ -15,7 +15,9 @@ While this article focuses on an equal partition split, it's also crucial to tes
 ### [Part 3 - Python Application - Test Data](#data-section)
 ### [Part 4 - Split Brain](#split-brain-section)
 
-### Creating our environment - Overview
+### Overview
+
+This is what we plan to do.
 
 1. **Create 2 Unrelated VPCs in AWS:** Each VPC will be in a different region.
 2. **Run a Simple 2-Way Chat Message Across the Private Network:** Establish basic communication.
@@ -151,7 +153,7 @@ Congratulations, your second region is complete.
 
 #### VPC Peering - Stretched Network
 
-The following diagram shows what we intend to achieve with our cross-regional network. We will use AWS's VPC peering to achieve this seamlessly. We will test that we can reach each region with a simple yet powerful network tool.
+The following diagram shows what we intend to achieve with our cross-regional network. We will use AWS's VPC peering to achieve this seamlessly. We will test that we can reach each region with a simple yet powerful networking tool.
 
 ![aws-vpc-stretch.png](aws-vpc-stretch.png)
 
@@ -230,12 +232,12 @@ Launch 3 x EC2 instance with the following settings:
 
 #### Install Aerospike DB
 
-Log into each host in a single region using SSH and install Aerospike. Note some of the comments in the file as these will represent specific changes required for each host. Although there are several automation tools available, we will manually configure each of the six nodes to keep things simple and aid learning.
+Log into each host in a single region using SSH and install Aerospike. There are comments in the file below to remind you about specific changes required for each host. Although there are several automation tools available, we will manually configure each of the six nodes to keep things simple and aid learning.
 
 If you are interested in knowing more about Aerospike, visit the [Developer website](https://aerospike.com/developer/).
 
-- If you have a license file, also known as a feature file, copy this across to the host.
-- SSH into each host machine.
+- If you have a license key, also known as a feature file, copy this across to the host.
+- SSH into each host machine and run the following.
 
 EC2 database hosts in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 
@@ -360,7 +362,7 @@ namespace mydata {
 #        }
         storage-engine memory {
                 file /opt/aerospike/ns1.dat   # Location of a namespace data file on server
-                filesize 1G                  # Max size of each file in GiB. Maximum size is 2TiB
+                filesize 1G                   # Max size of each file in GiB. Maximum size is 2TiB
                 stop-writes-avail-pct 5       # (optional) stop-writes threshold as a percentage of
                                               # devices/files size or data-size.
                 stop-writes-used-pct 70       # (optional) stop-writes threshold as a percentage of
@@ -400,7 +402,7 @@ sudo systemctl status aerospike
 
 #### ACL User Authentication
 
-You can run the following command just once on a single host to enable adding database records. Typically, you would set up different users and roles for such tasks, but for simplicity, we are using the `admin` role (which is not recommended for production environments).
+You can run the following command once on a single host to allow the `admin` user to add records to the db. Typically, you would set up different users and roles for such tasks, but for simplicity, we are using the `admin` role (which is not recommended for production environments).
 
 
 ```bash 
@@ -409,7 +411,7 @@ asadm -Uadmin -Padmin -e "enable; manage acl grant user admin roles sys-admin"
 asadm -Uadmin -Padmin -e "enable; show user"
 ```
 
-To get a view of your current Aerospike cluster, including the nodes you've added, you can run the following command. At this stage, you should have only added the three nodes in the London region.
+To get a view of your current Aerospike cluster, including the nodes you've added, you can run the following command. At this stage, you should have added at least three nodes in the London region.
 
 ```bash
 asadm -e i -Uadmin -Padmin
@@ -445,7 +447,7 @@ mydata   |                                               |    |      |    0.000 
 Number of rows: 3
 ```
 
-Congratulations! You should now see all six nodes in your stretch cluster. This setup includes the three nodes you configured in the London region and the three nodes in the Paris region.
+Congratulations! You should have added all six nodes in your stretch cluster. This setup includes the three nodes you configured in the London region and the three nodes in the Paris region.
 
 ```bash
 sadm -e i -Uadmin -Padmin
@@ -530,19 +532,22 @@ All six nodes (three in London and three in Paris) should appear in the output, 
 
 <i>But wait!</I>
 
+It appears there are currently six racks displayed in your Aerospike cluster configuration, which doesn’t align with your setup of 3 nodes per region and a total of 2 regions. 
+Since all nodes in each region are in a single subnet, they could be grouped into two logical racks.
 
-It appears there are currently six racks displayed in your Aerospike cluster configuration, which doesn’t align with your setup of three nodes per region and two regions. Since all nodes in each region are in a single subnet, they should be grouped into two meaningful racks.
+To correct this, you need to edit the cluster configuration to consolidate the existing racks into the appropriate number of rack-id(s).
+ See the diagram at the top of [Part 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section).
 
-To correct this, you need to edit the cluster configuration to consolidate the racks into the appropriate number.
- See the diagram at the top of Part 2: Aerospike NoSQL DB Stretch Cluster.
-
-Action: Edit the cluster so we have only 2 meaningful racks.
+Action: Edit the cluster so we have only 2 logical racks.
 
 ```bash
+# Login to the admin tool
 asadm -Uadmin -Padmin
 
 # show the roster
 show roster
+
+# Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 10:00:03 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                           Node| Node|Namespace|                                     Current Roster|                                     Pending Roster|                                     Observed Nodes
                                               |   ID|         |                                                   |                                                   |
@@ -557,8 +562,10 @@ Number of rows: 6
 # remove the n-1 nodes from the cluster
 manage roster remove nodes A882@882 A600@600 A517@517 A352@352 A129@129 ns mydata
 
-# check the current roster should be only 1 node
+# check the current roster should only be a single node
 show roster
+
+# Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 11:25:26 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                            Node| Node|Namespace|Current|Pending|                          Observed Nodes
                                                |   ID|         | Roster| Roster|
@@ -582,6 +589,8 @@ info
 manage roster stage observed A882@33,A600@32,A517@33,A352@32,A129@32,A70@33 ns mydata
 manage recluster
 show roster
+
+# Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-12 11:31:08 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                            Node| Node|Namespace|                                Current Roster|                                Pending Roster|                                Observed Nodes
                                                |   ID|         |                                              |                                              |
@@ -594,6 +603,8 @@ ip-172-32-5-239.eu-west-2.compute.internal:3000|A129 |mydata   |A882@33,A600@32,
 Number of rows: 6
 
 show racks
+
+# Output
 ~Racks (2024-08-12 11:31:34 UTC)~
 Namespace|Rack|         Nodes
          |  ID|
@@ -602,7 +613,7 @@ mydata   |  33|A882,A517,A70
 Number of rows: 2
 ```
 
-Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two meaningful racks—one for each region.
+Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two logical racks—one for each region.
 Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This ensures that the configuration aligns with your intended architecture.
 
 <p id="data-section"><h3>Part 3: Insert some records</h3></p>
@@ -637,9 +648,13 @@ To control how long your Python application should run and insert data into the 
 
 ```python
 # Set a timeout value in seconds
-timeout = 30  # Adjust this value based on your needs
+run_for_sec = 30  # Adjust this value based on your needs
 ```
 
+Edit the seed hosts for your Aerospike cluster. I have chosen 1 node from London and 1 from Paris.
+```python
+hosts = [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ]
+```
 To successfully install the Aerospike Python client library, you need to ensure that certain dependencies are met.
 
 > python3-devel <br>
