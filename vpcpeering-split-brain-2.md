@@ -1083,10 +1083,53 @@ By understanding how Aerospike maintains partitions under Strong Consistency (SC
 By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
 
 <p id="final-section"><h3>Finally: What's next</h3></p>
-.
 
-Hope you have enjoyed reading this article and learnt something new.
+### Exploring Different Network Partition Scenarios
 
+In this article, we explored how a network split (split brain) can affect a distributed data system. We initially focused on an equal split across two regions, but there are numerous permutations of network partitions that can yield interesting and varied results. Here, we will discuss several scenarios:
+
+#### Scenario 1: Uneven Subnet Split within a Region
+
+1. **Configuration:**
+  - **London Region:** 6 nodes (2 in each of 3 subnets)
+  - **Paris Region:** 6 nodes (2 in each of 3 subnets)
+
+2. **Network Partition:**
+  - Partition localized to a single subnet within the London region.
+
+3. **Expected Outcome:**
+  - ? The subnet with the partition will operate independently, leading to an uneven split within the region.
+  - ? Nodes in the other subnets will continue to function normally and communicate with the Paris region.
+
+#### Scenario 2: Uneven Split Across Regions
+
+1. **Configuration:**
+  - **London Region:** 4 nodes
+  - **Paris Region:** 3 nodes
+
+2. **Network Partition:**
+  - Split between the two regions.
+
+3. **Expected Outcome:**
+  - ? The London region will have more nodes and maintain a majority.
+  - ? The Paris region, with fewer nodes, may experience reduced availability and performance.
+
+#### Automating Network Partition Scenarios
+
+Automating these scenarios can save time and reduce the potential for human error. You can use scripts and tools like AWS CLI or Terraform to create and manage these network partitions.
+
+
+#### Future: Service Mesh and Kubernetes
+In the next article, we will explore creating a similar network partition scenario using a service mesh and stretching a database cluster in Kubernetes with the Aerospike Kubernetes Operator.
+
+#### Contact and Feedback
+If you have any questions or suggestions, feel free to drop me a line at icloud.nkm@gmail.com.
+
+#### Conclusion
+We have discussed various network partition scenarios and their potential impacts on a distributed data system. By understanding and testing these scenarios, you can design more resilient and robust systems.
+
+---
+Hope you have enjoyed reading this article and learned something new.
 
 
 
