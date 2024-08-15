@@ -2,9 +2,20 @@
 
 ![pairing-1.png](pairing-1.png)
 
-In this article, we are going to create a well-known split brain problem. This is where we create a network separation within a single, distributed system to observe the effects.
+In this article, we create a well-known split brain problem. This is where we knowingly and abruptly create a network separation within a single, distributed system to observe the effects.
+The system will be split across two geo-regions in equal proportion. 
 
-### Steps Overview
+By intentionally creating a network split, we can observe how the system handles partitioned operations and the impact on data consistency and availability. In an evenly split scenario, each region maintains its partition subset. This experiment helps in understanding the robustness and behavior of distributed systems under partitioned conditions.
+
+Brief Note on Unequal Partition Splits:
+While this article focuses on an equal partition split, it's also crucial to test unequal splits. In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. These scenarios help in designing resilient systems that can handle various partitioning cases effectively.
+
+### [Part 1 - Simple cross-region messaging application](#chat-section)
+### [Part 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
+### [Part 3 - Python Application - Test Data](#data-section)
+### [Part 4 - Split Brain](#split-brain-section)
+
+### Creating our environment - Overview
 
 1. **Create 2 Unrelated VPCs in AWS:** Each VPC will be in a different region.
 2. **Run a Simple 2-Way Chat Message Across the Private Network:** Establish basic communication.
@@ -15,28 +26,28 @@ In this article, we are going to create a well-known split brain problem. This i
 7. **Enforce a Network Split:** Create the split brain scenario.
 8. **Evaluate the Results:** Analyze the outcomes.
 
-### Part 1: Talking Chat Across Regions
+<p id="chat-section"><h3>Part 1: Talking Cross Region</h3></p>
 
 #### Selecting Our 2 Regions
 
 **Region 1:**
-Open a new browser tab and select the region. For this example, we will use eu-west-2, which is London. Ensure you have the key pairs downloaded, as we will need these later to log in to the host.
+Open a new internet browser tab and select the region. For this example, we will use eu-west-2, which is London. Ensure you have the key pairs downloaded, as we will need these later to log in to the host.
 
 ![keypair-image](keypair-image.png)
 
 **Region 2:**
-Open a new browser tab and select a different region. For the second region, we will use eu-west-3, which is Paris. Again, ensure you have the key pairs downloaded for logging in to the host.
+Open a new internet browser tab and select a different region. For the second region, we will use eu-west-3, which is Paris. Again, ensure you have the key pairs downloaded for logging in to the host.
 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
-By following these steps, we will demonstrate the impact of a network split on a distributed, cross-region NoSQL database.
-But before that we will test our cross region connection with a simple chat app with no coding involved. 
+By following these steps, we will demonstrate the impact of a network split on a distributed, cross-regional NoSQL database.
+But before that, we will test our cross-regional connections with a simple messaging tool with no application coding involved. 
 
 #### VPC in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿 󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥
 
-From AWS the console, visit the VPC Dashboard and create a new VPC named 'my-vpc-london-2' with the IPv4 CIDR block 172.32.0.0/16.
+From the AWS console, visit the VPC Dashboard and create a new VPC named 'my-vpc-london-2' with the IPv4 CIDR block 172.32.0.0/16.
 
-Next, we need to add subnets for the various availability zones and attach an internet gateway, linking these to a new routing table.
+Next, we will add subnets for the various availability zones and attach aa new internet gateway, linking all of these to a new routing table.
 
 Create the subnets for each availability zone in the VPC we just created:
 
@@ -57,7 +68,7 @@ Create the subnets for each availability zone in the VPC we just created:
 
 ![subnets-london.png](subnets-london.png)
 
-Under Your VPCs --> Resource Map, you should now see the subnets added.
+Under Your VPCs &rarr; Resource Map, you should now see the subnets added.
 
 ![subnets-paris-added.png](subnets-paris-added.png)
 
@@ -76,7 +87,7 @@ Launch an EC2 instance with the following settings:
 - **Security Group:** Create a new security group named my-sg-1.
 - **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
 
-Login using SSH and your key to ensure step 1 completed successfully:
+Login using SSH and your associated key to ensure step 1 completed successfully:
 
 ```sh
 ssh -o IdentitiesOnly=yes -i aws-instance-key-london-2.pem ubuntu@35.177.110.209
@@ -88,9 +99,9 @@ Congratulations, your first region is complete. Let's move on to the second regi
 
 #### VPC in Region Paris 🇫🇷
 
-From the browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Ensure the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
+From the internet browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Ensure the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
 
-Next, add subnets for the various availability zones and attach an internet gateway, linking these to a new routing table, just as we did before.
+Next, we will add subnets for the various availability zones and attach a new internet gateway, linking all of these to a new routing table, just as we did before.
 
 Create the subnets for each availability zone in the VPC we just created:
 
@@ -124,11 +135,11 @@ Launch an EC2 instance with the following settings:
 - **Key Pair:** Select the key you created earlier and downloaded safely.
 - **VPC:** Select the VPC we created earlier.
 - **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
-- **Auto Assign Public IP:** In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP.
+- **Auto Assign Public IP:** In production, you would probably disable this and use a secure jump box. For simplicity, we will SSH directly using the public IP.
 - **Security Group:** Create a new security group named my-sg-1.
 - **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
 
-Login using SSH and your key to ensure step 2 completed successfully:
+Login using SSH and associated key to ensure step 2 completed successfully:
 
 ```sh
 ssh -o IdentitiesOnly=yes -i aws-instance-key-paris-1.pem ubuntu@13.38.38.248
@@ -140,29 +151,30 @@ Congratulations, your second region is complete.
 
 #### VPC Peering - Stretched Network
 
-The following diagram shows what we intend to achieve with our cross-regional network. We will use AWS's VPC peering to achieve this seamlessly. We will test that we can reach each region with a simple yet powerful chat application.
+The following diagram shows what we intend to achieve with our cross-regional network. We will use AWS's VPC peering to achieve this seamlessly. We will test that we can reach each region with a simple yet powerful network tool.
 
 ![aws-vpc-stretch.png](aws-vpc-stretch.png)
 
 - **Paris VPC** 🇫🇷
-    - Under Your VPCs --> Peering Connections, create a new peering connection.
+    - Under Your VPCs &rarr; Peering Connections, create a new peering connection.
     - Name it 'my-pc-to-london-1'.
     - As the VPC ID (Requester), select the VPC we created earlier.
     - Select another VPC to peer with in another region; in our example, it's London (eu-west-2). Enter the VPC ID for the VPC in London.
 
   ![rtb-london-add-pc.png](rtb-london-add-pc.png)
 
+
 - **London VPC** 🏴󠁧󠁢󠁥󠁮󠁧󠁿
-    - Go to the London VPCs --> Peering Connections and accept the request made from the Paris VPC. You might be prompted to update the routing table. If so, accept it.
+    - Go to the London VPCs &rarr; Peering Connections and accept the request made from the Paris VPC. You might be prompted to update the routing table. If so, accept it.
     - Update the routing table:
         - **Target:** VPC peering
         - **Destination:** Paris CIDR 172.33.0.0/16
 
   ![rtb-paris-add-pc.png](rtb-paris-add-pc.png)
 
-#### Chat Application (using `nc` Netcat)
+#### Messaging 'chat' (using `nc` Netcat)
 
-From the London EC2 instance, start an `nc` server on port 3000:
+From the London EC2 instance, start an `nc` server on port 3000 with the following switches:
 
 ```sh
 nc -l -k -p 3000
@@ -174,11 +186,11 @@ From the Paris EC2 instance, establish a client connection to the London server:
 nc 172.32.34.147 3000
 ```
 
-You can now start chatting. All your messages are being sent across the channel literally!
+You can now start chatting as all your messages are being sent across the channel literally!
 
 ![chat-nc.png](chat-nc.png)
 
-### Part 2: Aerospike NoSQL DB Stretch Cluster
+<p id="stretch-cluster-section"><h3>Part 2: Aerospike NoSQL DB Stretch Cluster</h3></p>
 
 In this section, we will create a 6-node stretch cluster NoSQL DB, with each region hosting 3 nodes. The following diagram illustrates the stretch cluster configuration, where every node interconnects with each other node. Due to VPC peering, additional latencies may be observed for replica updates, but this is not a concern for this topic.
 
@@ -593,7 +605,8 @@ Number of rows: 2
 Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two meaningful racks—one for each region.
 Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This ensures that the configuration aligns with your intended architecture.
 
-### Part 3: Insert some records
+<p id="data-section"><h3>Part 3: Insert some records</h3></p>
+
 To ensure that data is being written to your Aerospike database while performing split brain scenarios, you can use a basic Python application to insert data. This will help you verify the cluster's behavior and data consistency under test conditions.
 Below is a simple Python script that inserts some data into the Aerospike database. This script uses the `aerospike` client library to connect to the cluster and perform data operations.
 
@@ -752,7 +765,7 @@ except ex.ClientError as e:
 
 Ensure that your Python application continues to run in the background for an extended period, allowing you to perform tests and simulate various scenarios.
 
-### Part 3: Split Brain
+<p id="split-brain-section"><h3>Part 4: Split Brain</h3></p>
 
 #### Understanding Strong Consistency in Aerospike
 
@@ -1050,6 +1063,9 @@ By understanding how Aerospike maintains partitions under Strong Consistency (SC
 By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
 
 Hope you have enjoyed reading this article and learnt something new.
+
+
+
 
 
 
