@@ -2,11 +2,11 @@
 
 ![pairing-1.png](pairing-1.png)
 
-In this experiment, we knowingly and abruptly create a network separation within a live distributed system. 
+In this experiment, we knowingly and abruptly create a network separation within a live distributed database. 
 The system is split evenly across two geo-regions in equal proportion. 
 Each region maintains its partition subset. 
 This way we can clearly understand the robustness and behavior of a distributed system under partitioned conditions.
-Understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
+By understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
 
 While this article focuses on an equal partition split, it's also crucial to test unequal splits. 
 In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. 
@@ -17,16 +17,16 @@ Each phase will demand a unique set of skills.
 For instance, on Day 1, you'll be exploring AWS Virtual Private Networks and Peering, 
 while on Day 2, you'll take on the role of a DBA, each day introducing you to a different challenge.
 
-### [Day 1 - Simple cross-region messaging application](#chat-section)
-### [Day 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
-### [Day 3 - Python Application - Test Data](#data-section)
-### [Day 4 - Split Brain](#split-brain-section)
-### [Day 5 - Partition Management Strong Consistency](#partition-management-section)
-### [Finally - What's next](#final-section)
+-  Day 1 - Simple cross-region messaging application
+-  Day 2 - Aerospike NoSQL DB Stretch Cluster
+-  Day 3 - Python Application - Test Data
+-  Day 4 - Split Brain
+-  Day 5 - Partition Management Strong Consistency
+-  Day 6 - (optional bonus day)
 
 ## Overview
 
-This is what we plan to do.
+This is what we plan to do over the next 5 days.
 
 1. **Create 2 Unrelated VPCs in AWS:** Each VPC will be in a different region.
 2. **Run a Simple 2-Way Chat Message Across the Private Network:** Establish basic communication.
