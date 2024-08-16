@@ -17,12 +17,13 @@ Each phase will demand a unique set of skills.
 For instance, on Day 1, you'll be exploring AWS Virtual Private Networks and Peering, 
 while on Day 2, you'll take on the role of a DBA, each day introducing you to a different challenge.
 
--  Day 1 - Simple cross-region messaging application
--  Day 2 - Aerospike NoSQL DB Stretch Cluster
--  Day 3 - Python Application - Test Data
--  Day 4 - Split Brain
--  Day 5 - Partition Management Strong Consistency
--  Day 6 - (optional bonus day)
+
+-  **Day 1** - Simple cross-region messaging application
+-  **Day 2** - Aerospike NoSQL DB Stretch Cluster
+-  **Day 3** - Python Application - Test Data
+-  **Day 4** - Split Brain
+-  **Day 5** - Partition Management Strong Consistency
+-  **Day 6** - (optional bonus day)
 
 ## Overview
 
