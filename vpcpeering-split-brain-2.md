@@ -2,15 +2,20 @@
 
 ![pairing-1.png](pairing-1.png)
 
-In this article, we create a well-known split brain problem. This is where we knowingly and abruptly create a network separation within a single, distributed system to observe the effects.
-The system will be split across two geo-regions in equal proportion. 
+In this experiment, we knowingly and abruptly create a network separation within a live distributed system. 
+The system is split evenly across two geo-regions in equal proportion. 
+Each region maintains its partition subset. 
+This way we can clearly understand the robustness and behavior of a distributed system under partitioned conditions.
+Understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
 
-By intentionally creating a network split, we can observe how the system handles partitioned operations and the impact on data consistency and availability. In an evenly split scenario, each region maintains its partition subset. This experiment helps in understanding the robustness and behavior of distributed systems under partitioned conditions.
+While this article focuses on an equal partition split, it's also crucial to test unequal splits. 
+In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. 
+I will discuss this in detail in a separate article.
 
-Brief Note on Unequal Partition Splits:
-While this article focuses on an equal partition split, it's also crucial to test unequal splits. In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. These scenarios help in designing resilient systems that can handle various partitioning cases effectively.
-
-I've divided the article into five separate sections for easier reading. However, if you have the time, you can read it continuously for a more seamless experience.
+I've structured this blog into a series of five articles, each corresponding to a different phase of the experiment. 
+Each phase will demand a unique set of skills. 
+For instance, on Day 1, you'll be exploring AWS Virtual Private Networks and Peering, 
+while on Day 2, you'll take on the role of a DBA, each day introducing you to a different challenge.
 
 ### [Day 1 - Simple cross-region messaging application](#chat-section)
 ### [Day 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section)
