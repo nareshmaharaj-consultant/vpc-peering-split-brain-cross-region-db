@@ -32,7 +32,7 @@ This is what we plan to do over the next 5 days.
 2. **Run a Simple 2-Way Chat Message Across the Private Network:** Establish basic communication.
 3. **Split the Cross-Region Connection:** Demonstrate traffic blocking.
 4. **Install a Distributed Database Spanning the 2 Regions:** Treat it as a single system.
-5. **Enable Strong Consistency Features and Rules:** Ensure data integrity.
+5. **Enable Strong Consistency Features and Rules:** Verify data integrity.
 6. **Create a Client That Continually Updates Data:** Simulate real-world usage.
 7. **Enforce a Network Split:** Create the split brain scenario.
 8. **Evaluate the Results:** Analyze the outcomes.
@@ -42,12 +42,12 @@ This is what we plan to do over the next 5 days.
 #### Selecting Our 2 Regions
 
 **Region 1:**
-Open a new internet browser tab and select the region. For this example, we will use eu-west-2, which is London. Ensure you have the key pairs downloaded, as we will need these later to log in to the host.
+Open a new internet browser tab and select the region. For this example, we will use eu-west-2, which is London. Verify you have the key pairs downloaded, as we will need these later to log in to the host.
 
 ![keypair-image](keypair-image.png)
 
 **Region 2:**
-Open a new internet browser tab and select a different region. For the second region, we will use eu-west-3, which is Paris. Again, ensure you have the key pairs downloaded for logging in to the host.
+Open a new internet browser tab and select a different region. For the second region, we will use eu-west-3, which is Paris. Again, verify you have the key pairs downloaded for logging in to the host.
 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
@@ -98,7 +98,7 @@ Launch an EC2 instance with the following settings:
 - **Security Group:** Create a new security group named my-sg-1.
 - **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
 
-Login using SSH and your associated key to ensure step 1 completed successfully:
+Login using SSH and your associated key to verify step 1 completed successfully:
 
 ```sh
 ssh -o IdentitiesOnly=yes -i aws-instance-key-london-2.pem ubuntu@35.177.110.209
@@ -110,7 +110,7 @@ Congratulations, your first region is complete. Let's move on to the second regi
 
 #### VPC in Region Paris 🇫🇷
 
-From the internet browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Ensure the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
+From the internet browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Verify the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
 
 Next, we will add subnets for the various availability zones and attach a new internet gateway, linking all of these to a new routing table, just as we did before.
 
@@ -150,7 +150,7 @@ Launch an EC2 instance with the following settings:
 - **Security Group:** Create a new security group named my-sg-1.
 - **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
 
-Login using SSH and associated key to ensure step 2 completed successfully:
+Login using SSH and associated key to verify step 2 completed successfully:
 
 ```sh
 ssh -o IdentitiesOnly=yes -i aws-instance-key-paris-1.pem ubuntu@13.38.38.248
@@ -501,7 +501,7 @@ mydata   |                                              |    |      |    0.000  
 
 #### Strong Consistency
 
-To enable Strong Consistency (SC) rules in Aerospike, you will need to run a few administrative commands. This ensures that your database maintains strict consistency across all nodes in the cluster.
+To enable Strong Consistency (SC) rules in Aerospike, you will need to run a few administrative commands. This will reinforce that your database maintains strict consistency across all nodes in the cluster.
 
 ```bash
 enable
@@ -623,13 +623,12 @@ Number of rows: 2
 ```
 
 Congratulations! You have successfully updated the rack configuration for your cross-regional Aerospike cluster. The cluster now accurately reflects two logical racks—one for each region.
-Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This ensures that the configuration aligns with your intended architecture.
+Don’t forget to verify and update the `rack-id` values in your Aerospike configuration file to match the revised rack setup. This will make sure that the configuration aligns with your intended architecture.
 
 <p id="data-section"><h2>Day 3: Insert some records</h2></p>
 
-To ensure that data is being written to your Aerospike database while performing split brain scenarios, you can use a basic Python application to insert data. This will help you verify the cluster's behavior and data consistency under test conditions.
+You will want to verify that data is being written to your Aerospike database while performing the split brain scenarios. To achieve this you will create a basic Python application to insert data. This will help you verify the cluster's behavior and data consistency under test conditions.
 Below is a simple Python script that inserts some data into the Aerospike database. This script uses the `aerospike` client library to connect to the cluster and perform data operations.
-
 
 When you run the provided Python script to insert data into your Aerospike database, the data should be structured and stored as follows. Here’s an example of how the inserted data might look:
 
