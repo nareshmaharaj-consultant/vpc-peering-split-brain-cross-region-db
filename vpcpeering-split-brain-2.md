@@ -29,26 +29,27 @@ while on Day 2, you'll take on the role of a DBA, each day introducing you to a 
 
 This is what we plan to do over the next 5 days.
 
-1. **Create 2 Unrelated VPCs in AWS:** Each VPC will be in a different region.
-2. **Run a Simple 2-Way Chat Message Across the Private Network:** Establish basic communication.
-3. **Split the Cross-Region Connection:** Demonstrate traffic blocking.
-4. **Install a Distributed Database Spanning the 2 Regions:** Treat it as a single system.
-5. **Enable Strong Consistency Features and Rules:** Verify data integrity.
-6. **Create a Client That Continually Updates Data:** Simulate real-world usage.
-7. **Enforce a Network Split:** Create the split brain scenario.
-8. **Evaluate the Results:** Analyze the outcomes.
+1. Create 2 Unrelated VPCs in AWS, each VPC will be in a different region.
+2. Establish basic communication using a simple chat message app over the private network.
+3. Demonstrate traffic blocking by splitting the cross-regional connection.
+4. Install a Distributed Database spanning the 2 regions and treat it as a single system.
+5. Verify data integrity by enabling strong consistency features and rules.
+6. Simulate real-world traffic using a simple Python data loader
+7. Enforce a network split that will create the split brain scenario.
+8. Evaluate the Results. 
 
 <p id="chat-section"><h2>Day 1: Talking Cross Region</h2></p>
 
-#### Selecting Our 2 Regions
+Selecting Our 2 Regions
 
-**Region 1:**
-Open a new internet browser tab and select the region. For this example, we will use eu-west-2, which is London. Verify you have the key pairs downloaded, as we will need these later to log in to the host.
+In a browser navigate to the top right hand corner and select a unique region. 
+For this example, we will use `eu-west-2`, which is London. Verify you have the correct key pairs downloaded, as you will need these later to log in to the host.
 
 ![keypair-image](keypair-image.png)
 
-**Region 2:**
-Open a new internet browser tab and select a different region. For the second region, we will use eu-west-3, which is Paris. Again, verify you have the key pairs downloaded for logging in to the host.
+Open a new tab and select a different region. 
+For the second region, we will use `eu-west-3`, which is Paris. 
+Again, verify you have the correct key pairs downloaded for logging in to the host.
 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
@@ -59,21 +60,21 @@ But before that, we will test our cross-regional connections with a simple messa
 
 From the AWS console, visit the VPC Dashboard and create a new VPC named 'my-vpc-london-2' with the IPv4 CIDR block 172.32.0.0/16.
 
-Next, we will add subnets for the various availability zones and attach aa new internet gateway, linking all of these to a new routing table.
+Next, we will add subnets for the various availability zones and attach a new internet gateway, linking all of these to a new routing table.
 
 Create the subnets for each availability zone in the VPC we just created:
 
-- **First Availability Zone**
+- First Availability Zone
     - Set the IPv4 subnet CIDR block to 172.32.32.0/20.
     - Subnet name: my-subnet-2a
     - Select the availability zone: eu-west-2a
 
-- **Second Availability Zone**
+- Second Availability Zone
     - Set the IPv4 subnet CIDR block to 172.32.16.0/20.
     - Subnet name: my-subnet-2b
     - Select the availability zone: eu-west-2b
 
-- **Third Availability Zone**
+- Third Availability Zone
     - Set the IPv4 subnet CIDR block to 172.32.0.0/20.
     - Subnet name: my-subnet-2c
     - Select the availability zone: eu-west-2c
@@ -90,14 +91,17 @@ Create a new Internet Gateway and then add it to the Routing Table. Check that y
 
 Launch an EC2 instance with the following settings:
 
-- **Image:** Canonical, Ubuntu, 22.04 LTS, amd64 jammy image built on 2024-07-01
-- **Instance Type:** t2-micro
-- **Key Pair:** Select the key you created earlier and downloaded safely.
-- **VPC:** Select the VPC we created earlier.
-- **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
-- **Auto Assign Public IP:** In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP.
-- **Security Group:** Create a new security group named my-sg-1.
-- **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
+
+| Parameter              | Value                                                                                         |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| Image                  | Canonical, Ubuntu, 22.04 LTS, amd64 jammy image built on 2024-07-01                           |
+| Instance Type          | t2-micro                                                                                      |
+| Key Pair               | Select the key you created earlier and downloaded safely.                                     |
+| VPC                    | Select the VPC we created earlier.                                                            |
+| Subnet                 | Choose the subnet we created earlier for the availability zone this host will be placed in.   |
+| Auto Assign Public IP  | In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP. |
+| Security Group         | Create a new security group named my-sg-1.                                                    |
+| Security Group Rule    | Add a custom TCP rule for ports 3000-3003, source from anywhere.                              |
 
 Login using SSH and your associated key to verify step 1 completed successfully:
 
@@ -111,23 +115,23 @@ Congratulations, your first region is complete. Let's move on to the second regi
 
 #### VPC in Region Paris 🇫🇷
 
-From the internet browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Verify the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
+From the browser tab with the Paris region selected, go to the VPC Dashboard and create a new VPC. Verify the CIDR blocks do not overlap with the London VPC. Use the IPv4 CIDR block 172.33.0.0/16.
 
 Next, we will add subnets for the various availability zones and attach a new internet gateway, linking all of these to a new routing table, just as we did before.
 
 Create the subnets for each availability zone in the VPC we just created:
 
-- **First Availability Zone**
+- First Availability Zone
     - Set the IPv4 subnet CIDR block to 172.33.16.0/20.
     - Subnet name: my-subnet-3a
     - Select the availability zone: eu-west-3a
 
-- **Second Availability Zone**
+- Second Availability Zone
     - Set the IPv4 subnet CIDR block to 172.33.0.0/20.
     - Subnet name: my-subnet-3b
     - Select the availability zone: eu-west-3b
 
-- **Third Availability Zone**
+- Third Availability Zone
     - Set the IPv4 subnet CIDR block to 172.33.32.0/20.
     - Subnet name: my-subnet-3c
     - Select the availability zone: eu-west-3c
@@ -142,14 +146,17 @@ Create a new Internet Gateway and then add it to the Routing Table. Check that y
 
 Launch an EC2 instance with the following settings:
 
-- **Image:** ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20240701
-- **Instance Type:** t2-micro
-- **Key Pair:** Select the key you created earlier and downloaded safely.
-- **VPC:** Select the VPC we created earlier.
-- **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
-- **Auto Assign Public IP:** In production, you would probably disable this and use a secure jump box. For simplicity, we will SSH directly using the public IP.
-- **Security Group:** Create a new security group named my-sg-1.
-- **Security Group Rule:** Add a custom TCP rule for ports 3000-3003, source from anywhere.
+| Parameter              | Value                                                                                         |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| Image                  | ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20240701                                |
+| Instance Type          | t2-micro                                                                                      |
+| Key Pair               | Select the key you created earlier and downloaded safely.                                     |
+| VPC                    | Select the VPC we created earlier.                                                            |
+| Subnet                 | Choose the subnet we created earlier for the availability zone this host will be placed in.   |
+| Auto Assign Public IP  | In production, you would probably disable this and use a secure jump box. For simplicity, we will SSH directly using the public IP. |
+| Security Group         | Create a new security group named my-sg-1.                                                    |
+| Security Group Rule    | Add a custom TCP rule for ports 3000-3003, source from anywhere.                              |
+
 
 Login using SSH and associated key to verify step 2 completed successfully:
 
@@ -179,8 +186,8 @@ The following diagram shows what we intend to achieve with our cross-regional ne
 - **London VPC** 🏴󠁧󠁢󠁥󠁮󠁧󠁿
     - Go to the London VPCs &rarr; Peering Connections and accept the request made from the Paris VPC. You might be prompted to update the routing table. If so, accept it.
     - Update the routing table:
-        - **Target:** VPC peering
-        - **Destination:** Paris CIDR 172.33.0.0/16
+        - Target: VPC peering
+        - Destination: Paris CIDR 172.33.0.0/16
 
   ![rtb-paris-add-pc.png](rtb-paris-add-pc.png)
 
@@ -216,29 +223,35 @@ For each region, create three nodes. Select the VPC you previously set up, enabl
 
 Launch 3 x EC2 instance with the following settings:
 
-- **Image:** Rocky-8-EC2-Base-8.7-20230215.0.x86_64 ( ami-07d2b4d8d9980a125 )
-- **Instance Type:** t3a.medium ( not what you would use in production )
-- **Key Pair:** Select the key you created earlier and downloaded safely.
-- **VPC:** Select the VPC we created earlier.
-- **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
-- **Auto Assign Public IP:** In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP.
-- **Security Group:** Use the same security group from earlier.
-- **Security Group Rule:** None so far
-- **Volumes:** Root Volume: 1x10GB-gp2, 1x8GB-gp3
+| Parameter              | Value                                                                                         |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| Image                  | Rocky-8-EC2-Base-8.7-20230215.0.x86_64 (ami-07d2b4d8d9980a125)                                |
+| Instance Type          | t3a.medium (not what you would use in production)                                             |
+| Key Pair               | Select the key you created earlier and downloaded safely.                                     |
+| VPC                    | Select the VPC we created earlier.                                                            |
+| Subnet                 | Choose the subnet we created earlier for the availability zone this host will be placed in.   |
+| Auto Assign Public IP  | In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP. |
+| Security Group         | Use the same security group from earlier.                                                     |
+| Security Group Rule    | None so far                                                                                   |
+| Volumes                | Root Volume: 1x10GB-gp2, 1x8GB-gp3                                                            |
+
 
 #### EC2 database hosts in Region Paris 🇫🇷
 
 Launch 3 x EC2 instance with the following settings:
 
-- **Image:** Rocky-8-EC2-LVM-8.7-20230215.0.x86_64 ( ami-064a83a6b9c2edb23 )
-- **Instance Type:** t3a.medium ( not what you would use in production )
-- **Key Pair:** Select the key you created earlier and downloaded safely.
-- **VPC:** Select the VPC we created earlier.
-- **Subnet:** Choose the subnet we created earlier for the availability zone this host will be placed in.
-- **Auto Assign Public IP:** In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP.
-- **Security Group:** Use the same security group from earlier.
-- **Security Group Rule:** None so far
-- **Volumes:** Root Volume: 1x10GB-gp2, 1x8GB-gp3
+| Parameter              | Value                                                                                         |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| Image                  | Rocky-8-EC2-LVM-8.7-20230215.0.x86_64 (ami-064a83a6b9c2edb23)                                 |
+| Instance Type          | t3a.medium (not what you would use in production)                                             |
+| Key Pair               | Select the key you created earlier and downloaded safely.                                     |
+| VPC                    | Select the VPC we created earlier.                                                            |
+| Subnet                 | Choose the subnet we created earlier for the availability zone this host will be placed in.   |
+| Auto Assign Public IP  | In production, you would probably disable this and use a jump box. For simplicity, we will SSH directly using the public IP. |
+| Security Group         | Use the same security group from earlier.                                                     |
+| Security Group Rule    | None so far                                                                                   |
+| Volumes                | Root Volume: 1x10GB-gp2, 1x8GB-gp3                                                            |
+
 
 #### Install Aerospike DB
 
@@ -807,30 +820,24 @@ Here’s a deeper look at how Strong Consistency works and its importance:
 
 #### Key Features of Strong Consistency
 
-1. **Sequential Writes:**
-  - All writes to a single record are applied in the order they are received. This ensures that the state of the record is predictable and consistent across all nodes in the cluster.
+1. _Sequential Writes_:
+  All writes to a single record are applied in the order they are received. This ensures that the state of the record is predictable and consistent across all nodes in the cluster.
 
-2. **No Data Loss:**
-  - Aerospike SC mode ensures that data is not lost, even in the event of network partitions or node failures. However, there are rare exceptions, such as simultaneous hardware failures on different nodes, which could potentially result in data loss.
+2. _No Data Loss_: Aerospike SC mode ensures that data is not lost, even in the event of network partitions or node failures. However, there are rare exceptions, such as simultaneous hardware failures on different nodes, which could potentially result in data loss.
 
-3. **Quorum-based Commit:**
-  - Writes are only considered successful when a quorum of nodes acknowledge the write operation. This means that a majority of nodes must agree on the write, ensuring data consistency even in the presence of node failures or network issues.
+3. _Quorum-based Commit_: Writes are only considered successful when a quorum of nodes acknowledge the write operation. This means that a majority of nodes must agree on the write, ensuring data consistency even in the presence of node failures or network issues.
 
-4. **Immediate Consistency:**
-  - As soon as a write operation is confirmed, all subsequent read operations will reflect this write. This contrasts with eventual consistency, where reads might temporarily return stale data.
+4. _Immediate Consistency_: As soon as a write operation is confirmed, all subsequent read operations will reflect this write. This contrasts with eventual consistency, where reads might temporarily return stale data.
 
 #### Evaluating Strong Consistency in Split-Brain Scenarios
 
 During a split-brain scenario, the network partition can lead to isolated clusters of nodes. Evaluating the behavior of Aerospike under such conditions is crucial to understanding the robustness of its SC mode. Here’s how SC mode helps:
 
-1. **Write Operations:**
-  - In a split-brain scenario, writes can only be processed by the nodes that form a majority partition. This prevents conflicting writes to the same record from different partitions, maintaining data integrity.
+1. _Write Operations_: In a split-brain scenario, writes can only be processed by the nodes that form a majority partition. This prevents conflicting writes to the same record from different partitions, maintaining data integrity.
 
-2. **Read Operations:**
-  - Reads will always return the most recent write that was acknowledged by a majority of nodes. If a node is isolated in a minority partition, it will not serve stale data to clients.
+2. _Read Operations:_ Reads will always return the most recent write that was acknowledged by a majority of nodes. If a node is isolated in a minority partition, it will not serve stale data to clients.
 
-3. **Reconciliation Post-Recovery:**
-  - Once the network partition is resolved, Aerospike uses SC mode to reconcile any divergent states. The system ensures that the state of records is consistent across all nodes, based on the majority writes that were committed during the partition.
+3. _Reconciliation Post-Recovery_: Once the network partition is resolved, Aerospike uses SC mode to reconcile any divergent states. The system ensures that the state of records is consistent across all nodes, based on the majority writes that were committed during the partition.
 
 #### How to create the Split Brain
 
@@ -991,9 +998,9 @@ To summarise, we have an even split of nodes in each sub-cluster and each is up 
 
 **Key Observations:**
 
-- **Even Split:** Each region is operating independently, handling only the partitions it owns. 
+- _Even Split_: Each region is operating independently, handling only the partitions it owns. 
 
-- **Partition Ownership:** Each region manages 50% of the total partitions. This means that Paris handles half of the partitions, and London handles the other half.
+- _Partition Ownership_: Each region manages 50% of the total partitions. This means that Paris handles half of the partitions, and London handles the other half.
 
 Paris 🇫🇷
 ```text
@@ -1012,24 +1019,18 @@ mydata   |                                              |            |   2048|  
 Number of rows: 6
 ```
 
-### Summary
+- _Partition Distribution_: The `show pmap` command confirms that the partitions are evenly split between the Paris and London regions. Each region’s nodes manage an equal share of the partitions, which aligns with the network isolation we’ve implemented.
 
-- **Partition Distribution:**
-  - The `show pmap` command confirms that the partitions are evenly split between the Paris and London regions. Each region’s nodes manage an equal share of the partitions, which aligns with the network isolation we’ve implemented.
-
-- **Cluster Operation:**
-  - Both clusters (Paris and London) are fully operational but only for the partitions they currently own. This demonstrates how partition ownership and data distribution are maintained even during a network split.
+- _Cluster Operation_: Both clusters (Paris and London) are fully operational but only for the partitions they currently own. This demonstrates how partition ownership and data distribution are maintained even during a network split.
 
 By analyzing this command output, it’s clear that each subcluster is functioning correctly within its partition scope, illustrating the impact of the network partition on the Aerospike database’s partition management.
 
 #### Restoring Network Partition Configuration
 
 To resolve the network partition and restore full connectivity, you need to undo the previous security group rule changes made and set the inbound rules back to allow traffic from all sources (`0.0.0.0/0`).
-- **Partition Map:**
-  - After removing the restrictions, the `show pmap` command should show all 4096 partitions being managed correctly across the cluster, indicating that the data is now fully distributed and accessible.
+- _Partition Map_: After removing the restrictions, the `show pmap` command should show all 4096 partitions being managed correctly across the cluster, indicating that the data is now fully distributed and accessible.
 
-- **Node Communication:**
-  - All nodes should be active and successfully heartbeating with each other.
+- _Node Communication_: All nodes should be active and successfully heartbeating with each other.
 
 By following these steps, you have restored the Aerospike cluster to it's full operational state, ensuring all nodes can communicate and data distribution is consistent across the entire system.
 
@@ -1067,27 +1068,32 @@ By understanding how Aerospike maintains partitions under Strong Consistency (SC
 
 #### Key Points About Aerospike’s Partition Management
 
-1. **Strong Consistency Guarantees:**
-  - Aerospike’s SC mode ensures that all writes to a single record are applied in a specific order, sequentially. This means that even in a network partition or split-brain scenario, data consistency is preserved as long as the partition ownership and quorum requirements are met.
+1. Strong Consistency Guarantees:
+  - Aerospike’s SC mode ensures that all writes to a single record are applied in a specific order, sequentially.
+  - This means that even in a network partition or split-brain scenario, data consistency is preserved as long as the partition ownership and quorum requirements are met.
 
-2. **Partition Ownership:**
-  - Each node in the Aerospike cluster manages a portion of the partitions. During a network split, nodes in each region will only manage the partitions they own. This partition ownership helps ensure that data is consistently handled within each partition subset.
+2. Partition Ownership:
+  - Each node in the Aerospike cluster manages a portion of the partitions. During a network split, nodes in each region will only manage the partitions they own. 
+    
+- This partition ownership helps ensure that data is consistently handled within each partition subset.
 
-3. **Data Distribution:**
+3. Data Distribution:
   - In a distributed system like Aerospike, data is divided into partitions and distributed across nodes. During a split, nodes in each region will continue to manage and serve the partitions they own. This partition-centric approach helps in maintaining operational continuity even when parts of the network are isolated.
 
-4. **Handling Network Partitions:**
+4. Handling Network Partitions:
   - When designing systems with Aerospike, it's important to account for the possibility of network partitions. Understanding how partitions are managed and how strong consistency is maintained allows for better planning and mitigation strategies to handle such scenarios.
 
-5. **Application Design Considerations:**
-  - **Data Redundancy:** Ensure that data is replicated across multiple nodes to prevent data loss in case of node or region failures.
-  - **Quorum Configuration:** Configure the quorum settings to balance between performance and data consistency, considering the potential for network partitions.
-  - **Monitoring and Alerts:** Implement robust monitoring and alerting mechanisms to detect and respond to network partitions and split-brain scenarios promptly.
+5. Application Design Considerations:
+  - _Data Redundancy_: Verify that data is replicated across multiple nodes to prevent data loss in case of node or region failures.
+  - _Quorum Configuration_: Configure the quorum settings to balance between performance and data consistency, considering the potential for network partitions.
+  - _Monitoring and Alerts_: Implement robust monitoring and alerting mechanisms to detect and respond to network partitions and split-brain scenarios promptly.
 
-6. **Solution Architecture:**
-  - Design the architecture to minimize the impact of network partitions. This includes configuring the network and security settings to control access between regions and ensuring that the system can handle partitions gracefully without significant data inconsistencies.
+6. Solution Architecture:
+  - Design the architecture to minimize the impact of network partitions.
+  - This includes configuring the network and security settings to control access between regions and ensuring that the system can handle partitions gracefully without significant data inconsistencies.
 
-By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. There are of course many different network failure scenarios we could configure but this would be out of scope for this blog.
+By incorporating these considerations into your application design and solution architecture, you can leverage Aerospike’s strong consistency features to build robust, fault-tolerant systems that maintain data integrity even in complex network conditions. 
+
 
 <p id="final-section"><h2>Finally: What's next</h2></p>
 
