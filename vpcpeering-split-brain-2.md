@@ -53,6 +53,9 @@ Again, verify you have the correct key pairs downloaded for logging in to the ho
 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
+
+
+
 By following these steps, we will demonstrate the impact of a network split on a distributed, cross-regional NoSQL database.
 But before that, we will test our cross-regional connections with a simple messaging tool with no application coding involved. 
 
@@ -1097,35 +1100,38 @@ By incorporating these considerations into your application design and solution 
 
 <p id="final-section"><h2>Finally: What's next</h2></p>
 
-### Exploring Different Network Partition Scenarios
+#### Exploring Different Network Partition Scenarios
 
 In this article, we explored how a network split (split brain) can affect a distributed data system. We initially focused on an equal split across two regions, but there are numerous permutations of network partitions that can yield interesting and varied results. Here, we will discuss several scenarios:
 
-#### Scenario 1: Uneven Subnet Split within a Region
+Uneven Subnet Split within a Region
 
-1. **Configuration:**
-  - **London Region:** 6 nodes (2 in each of 3 subnets)
-  - **Paris Region:** 6 nodes (2 in each of 3 subnets)
+1. Configuration:
+   - London Region: 6 nodes (2 in each of 3 subnets)
+   - Paris Region: 6 nodes (2 in each of 3 subnets)
 
-2. **Network Partition:**
-  - Partition localized to a single subnet within the London region.
+2. Network Partition:
+    - Partition localized to a single subnet within the London region.
 
-3. **Expected Outcome:**
-  - ? The subnet with the partition will operate independently, leading to an uneven split within the region.
-  - ? Nodes in the other subnets will continue to function normally and communicate with the Paris region.
+3. Expected Outcome:
+    - The majority subnet with the network partition will operate independently, leading to an uneven split within the region and will most likely have all active database partitions.
+    - With replication factor > 1 and a properly configured logical rack layout all the database partitions will be available in the sub-cluster of 5 subnets.
+    - Nodes in the single subnet will continue to function normally but may not have any active database partitions.
 
-#### Scenario 2: Uneven Split Across Regions
+Uneven Split Across Regions
 
-1. **Configuration:**
-  - **London Region:** 4 nodes
-  - **Paris Region:** 3 nodes
+1. Configuration:
+    - London Region: 4 nodes
+    - Paris Region: 3 nodes
 
-2. **Network Partition:**
-  - Split between the two regions.
+2. Network Partition:
+    - Split between the two regions.
 
-3. **Expected Outcome:**
-  - ? The London region will have more nodes and maintain a majority.
-  - ? The Paris region, with fewer nodes, may experience reduced availability and performance.
+3. Expected Outcome:
+    - The London region will have more nodes and maintain a majority.
+      - All database partitions will be available with logical racks and replication factor > 1.
+    - The Paris region, with fewer nodes, may experience reduced availability and performance.
+      - Most likely will not have any active database partitions.
 
 #### Automating Network Partition Scenarios
 
