@@ -1,6 +1,7 @@
 # VPC Peering, Split Brain with Distributed Cross Region NoSQL-DB
 
 ![pairing-1.png](pairing-1.png)
+## Motivation
 
 In this experiment, we knowingly and abruptly create a network separation within a live distributed database. 
 The system is split evenly across two geo-regions in equal proportion. 
