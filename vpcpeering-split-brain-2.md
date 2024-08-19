@@ -6,7 +6,7 @@ In this experiment, we knowingly and abruptly create a network separation within
 The system is split evenly across two geo-regions in equal proportion. 
 Each region maintains its partition subset. 
 By doing this, we can clearly understand the robustness and behavior of a distributed system under partitioned conditions.
-By understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
+Understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
 
 While this article focuses on an equal partition split, it's also crucial to test unequal splits. 
 In a minority-majority scenario, the majority partition will continue to handle operations with quorum, while the minority partition may face availability issues. 
