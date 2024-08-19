@@ -5,7 +5,7 @@
 In this experiment, we knowingly and abruptly create a network separation within a live distributed database. 
 The system is split evenly across two geo-regions in equal proportion. 
 Each region maintains its partition subset. 
-This way we can clearly understand the robustness and behavior of a distributed system under partitioned conditions.
+By doing this, we can clearly understand the robustness and behavior of a distributed system under partitioned conditions.
 By understanding these scenarios can help solution architects design resilient systems that handle various partitioning cases effectively.
 
 While this article focuses on an equal partition split, it's also crucial to test unequal splits. 
@@ -14,50 +14,49 @@ I will discuss this in detail in a separate article.
 
 I've structured this blog into a series of five articles, each corresponding to a different phase of the experiment. 
 Each phase will demand a unique set of skills. 
-For instance, on Day 1, you'll be exploring AWS Virtual Private Networks and Peering, 
-while on Day 2, you'll take on the role of a DBA, each day introducing you to a different challenge.
+For instance, day 1, you'll be exploring Virtual Private Networks and Peering, 
+while on day 2, you'll take on the role of a DBA, each day introducing you to different challenges.
 
 
--  **Day 1** - Simple cross-region messaging application
--  **Day 2** - Aerospike NoSQL DB Stretch Cluster
--  **Day 3** - Python Application - Test Data
--  **Day 4** - Split Brain
+-  **Day 1** - Simple cross region messaging application
+-  **Day 2** - Installing an Aerospike NoSQL DB as a Stretch Cluster
+-  **Day 3** - Building a Python Application to insert test Data
+-  **Day 4** - Split Brain network partitioning
 -  **Day 5** - Partition Management Strong Consistency
--  **Day 6** - (optional bonus day)
+-  **Day 6** - (an optional bonus day)
 
 ## Overview
 
 This is what we plan to do over the next 5 days.
 
-1. Create 2 Unrelated VPCs in AWS, each VPC will be in a different region.
-2. Establish basic communication using a simple chat message app over the private network.
+1. Create 2 unrelated VPCs in AWS, each VPC will be in a different region.
+2. Establish basic communication using a simple  message app over the private network.
 3. Demonstrate traffic blocking by splitting the cross-regional connection.
 4. Install a Distributed Database spanning the 2 regions and treat it as a single system.
 5. Verify data integrity by enabling strong consistency features and rules.
 6. Simulate real-world traffic using a simple Python data loader
-7. Enforce a network split that will create the split brain scenario.
+7. Enforce a network partition that will create a well known split brain scenario.
 8. Evaluate the Results. 
 
 <p id="chat-section"><h2>Day 1: Talking Cross Region</h2></p>
 
-Selecting Our 2 Regions
+Selecting Regions
 
-In a browser navigate to the top right hand corner and select a unique region. 
-For this example, we will use `eu-west-2`, which is London. Verify you have the correct key pairs downloaded, as you will need these later to log in to the host.
+1. In a browser navigate to the top right hand corner of the AWS console
+2. Select a unique region. 
+   1. For this example we selected `eu-west-2`, being London. 
+3. Verify you have the correct key pairs downloaded, as you will need these later to log into the host.
 
 ![keypair-image](keypair-image.png)
 
-Open a new tab and select a different region. 
-For the second region, we will use `eu-west-3`, which is Paris. 
-Again, verify you have the correct key pairs downloaded for logging in to the host.
+1. Open a new tab and select a different region. 
+   1. For the second region, we will use `eu-west-3`, which is Paris. 
+2. Again, verify you have the correct key pairs downloaded for logging into the host.
 
 ![key-pair-paris2.png](key-pair-paris2.png)
 
-
-
-
 By following these steps, we will demonstrate the impact of a network split on a distributed, cross-regional NoSQL database.
-But before that, we will test our cross-regional connections with a simple messaging tool with no application coding involved. 
+But before that, we will test our cross-regional connections with a simple messaging tool with no application coding required. 
 
 #### VPC in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿 󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥
 
