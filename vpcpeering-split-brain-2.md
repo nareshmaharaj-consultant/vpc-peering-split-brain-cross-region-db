@@ -1231,6 +1231,9 @@ Number of rows: 7
 How many master records did you get in rack 32 and how many prole records did you get in rack 33?
 
 Bin bang! Go ahead and shutdown all 4 nodes in the London region. Your `asadm` info and pmap commands should resemble below:
+
+![odd-split-as-cluster-dc-failure-1.png](odd-split-as-cluster-dc-failure-1.png)
+
 ```text
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:26:44 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~Objects~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
