@@ -566,7 +566,9 @@ It appears there are currently six racks displayed in your Aerospike cluster con
 Since all nodes in each region are in a single subnet, they could be grouped into two logical racks.
 
 To correct this, you need to edit the cluster configuration to consolidate the existing racks into the appropriate number of rack-id(s).
- See the diagram at the top of [Part 2 - Aerospike NoSQL DB Stretch Cluster](#stretch-cluster-section).
+ See the diagram below.
+
+![consolidate-racks.png](consolidate-racks.png)
 
 Action: Edit the cluster so we have only 2 logical racks.
 
