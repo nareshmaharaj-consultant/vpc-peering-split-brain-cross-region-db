@@ -182,6 +182,10 @@ The following diagram shows what we intend to achieve with our cross-regional ne
     - Name it 'my-pc-to-london-1'.
     - As the VPC ID (Requester), select the VPC we created earlier.
     - Select another VPC to peer with in another region; in our example, it's London (eu-west-2). Enter the VPC ID for the VPC in London.
+    - Go to the Paris VPCs 
+      - Update the routing table:
+      - Target: VPC peering
+      - Destination: London CIDR 172.32.0.0/16
 
   ![rtb-london-add-pc.png](rtb-london-add-pc.png)
 
@@ -287,9 +291,9 @@ export ID=$((1 + $RANDOM % 1000))
 export INDEX=A$ID
 export IP=`ip a | grep 172 | awk {'print $2'} | cut -f1 -d'/'`
 export PIP=`dig +short myip.opendns.com @resolver1.opendns.com`
-export S1IP=172.32.15.231 # another london node for IP seeding
-export S2IP=172.33.16.172 # another paris node for IP seeding
-export DEV1=/dev/nvme1n1
+export S1IP=172.32.15.231 # another london node for IP seeding <<--------------- Change this
+export S2IP=172.33.16.172 # another paris node for IP seeding <<--------------- Change this
+export DEV1=/dev/nvme1n1 # <<--------------- Maybe Change this
 
 cat <<EOF> aerospike.conf
 service {
@@ -476,7 +480,7 @@ Number of rows: 3
 Congratulations! You should have added all six nodes in your stretch cluster. This setup includes the three nodes you configured in the London region and the three nodes in the Paris region.
 
 ```bash
-sadm -e i -Uadmin -Padmin
+asadm -e i -Uadmin -Padmin
 Seed:        [('127.0.0.1', 3000, None)]
 Config_file: /home/rocky/.aerospike/astools.conf, /etc/aerospike/astools.conf
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Network Information (2024-08-12 09:56:34 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -683,8 +687,11 @@ hosts = [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ]
 To successfully install the Aerospike Python client library, you need to ensure that certain dependencies are met.
 
 > python3-devel <br>
-> python3 <br>
+> python3.8 <br>
 > make
+
+Next install Aerospike Client Lib using pip.
+>sudo pip3.8 install aerospike
 
 Here is the code:
 ```python
@@ -804,6 +811,7 @@ except ex.ClientError as e:
 ```
 
 Ensure that your Python application continues to run in the background for an extended period, allowing you to perform tests and simulate various scenarios.
+> python3.8 clientApp.py
 
 <p id="split-brain-section"><h2>Day 4: Split Brain</h2></p>
 
@@ -1132,6 +1140,8 @@ Uneven Split Across Regions
       - All database partitions will be available with logical racks and replication factor > 1.
     - The Paris region, with fewer nodes, may experience reduced availability and performance.
       - Most likely will not have any active database partitions.
+    
+4. What happens in a catastophic event where for example, the London the majority region of 4 nodes goes permanently offline. What would be the cluster state and immediate client connectivity?   
 
 #### Automating Network Partition Scenarios
 
