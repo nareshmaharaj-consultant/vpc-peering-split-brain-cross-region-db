@@ -568,7 +568,7 @@ Since all nodes in each region are in a single subnet, they could be grouped int
 To correct this, you need to edit the cluster configuration to consolidate the existing racks into the appropriate number of rack-id(s).
  See the diagram below.
 
-![consolidate-racks.png](consolidate-racks.png)
+![consolidate-racks-1.png](consolidate-racks-1.png)
 
 Action: Edit the cluster so we have only 2 logical racks.
 
