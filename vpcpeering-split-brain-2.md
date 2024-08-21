@@ -1141,7 +1141,279 @@ Uneven Split Across Regions
     - The Paris region, with fewer nodes, may experience reduced availability and performance.
       - Most likely will not have any active database partitions.
     
-4. What happens in a catastophic event where for example, the London the majority region of 4 nodes goes permanently offline. What would be the cluster state and immediate client connectivity?   
+4. Imagine a catastrophic event where the majority of the London region's 4 nodes go permanently offline. What would the cluster state look like, and how would client connectivity be affected?
+
+We'll focus on this scenario as it presents an intriguing challenge.
+
+By now, you should be familiar with setting up VPCs across two regions and establishing a peering connection between them. If you need a refresher, refer to Day 1 of the series titled "Simple Cross-Region Messaging Application."
+
+Next, create 4 EC2 instances in each region, but only install Aerospike on 7 of the nodes. This ensures an odd-sized cluster, which is crucial for this experiment. If you need guidance on this step, visit Day 2 - "Installing an Aerospike NoSQL DB as a Stretch Cluster." You'll find everything you need there.
+
+Once completed, you should have a strong consistency cluster with 2 racks, numbered 32 and 33.
+
+Now, add some test data. We covered this on Day 3, so feel free to reuse the same code, updating only the seed host addresses
+
+![odd-split-as-cluster-1.png](odd-split-as-cluster-1.png)
+
+Before adding data, verify the current state of the cluster. You'll notice that there is no data present at this stage.
+```text
+# 4:3 split over 2 racks '32' and '33'
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:18:31 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|  Total|~~~~~~~~~~Objects~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |Records| Master|  Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |       |       |       |           |       |       |           |     Tx|     Rx
+mydata   |172.32.0.79:3000                               |  32|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.1.105:3000                              |  32|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.7.25:3000                               |  32|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.8.190:3000                              |  32|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |0.000  |0.000  |0.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |          
+```
+
+Now insert some testdata using your Python Application
+```bash
+python3.8 app.py
+Connected to Server
+Timeout reached. Exiting loop.
+```
+
+We have 271 records split across all nodes and regions. 
+Interestingly if you sum up the master records in rack '32' [ 35+40+33+38=146] this 
+should equal the prole records in rack '33' [52+53+41=146]. 
+This is because we have 2 racks with replication factor of 2. 
+We expect under normal circumstances a write will be written to 
+rack r` with a copy written to rack r`` and in strong consistency we guarantee 
+no ambiguity about whether a record is written or not written.
+( Note: with replication factor 2 and a single rack available with more 2 or more nodes, clients will still be able write data successfully)
+
+```text
+# 271 master records
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:21:31 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+mydata   |172.32.0.79:3000                               |  32|     2|    0.000  | 71.000  | 35.000  | 36.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.1.105:3000                              |  32|     2|    0.000  | 71.000  | 40.000  | 31.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.7.25:3000                               |  32|     2|    0.000  | 60.000  | 33.000  | 27.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.8.190:3000                              |  32|     2|    0.000  | 69.000  | 38.000  | 31.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  | 98.000  | 46.000  | 52.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  | 88.000  | 35.000  | 53.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  | 85.000  | 44.000  | 41.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |542.000  |271.000  |271.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+```
+
+Go ahead and insert more data and try doing some accounting checks like above.
+
+```bash
+python3.8 app.py
+Connected to Server
+Timeout reached. Exiting loop.
+```
+```text
+# 517 master records
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:24:13 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+mydata   |172.32.0.79:3000                               |  32|     2|    0.000  |134.000  | 68.000  | 66.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.1.105:3000                              |  32|     2|    0.000  |137.000  | 78.000  | 59.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.7.25:3000                               |  32|     2|    0.000  |110.000  | 63.000  | 47.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.8.190:3000                              |  32|     2|    0.000  |136.000  | 77.000  | 59.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |192.000  | 79.000  |113.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |160.000  | 67.000  | 93.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |165.000  | 85.000  | 80.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |  1.034 K|517.000  |517.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+```
+Did you get 286 master records in rack 32? How many prole records did you get in rack 33?
+
+Bin bang! Go ahead and shutdown all 4 nodes in the London region. Your `asadm` info and pmap commands should look resemble below:
+```text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:26:44 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~Objects~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records| Master|  Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |       |       |           |       |       |           |     Tx|     Rx
+~~       |172.32.0.79:3000                               |  ~~|    ~~|         ~~|       ~~|     ~~|     ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.1.105:3000                              |  ~~|    ~~|         ~~|       ~~|     ~~|     ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.7.25:3000                               |  ~~|    ~~|         ~~|       ~~|     ~~|     ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.8.190:3000                              |  ~~|    ~~|         ~~|       ~~|     ~~|     ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                               |    |      |         ~~|       ~~|     ~~|     ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |192.000  |0.000  |0.000  |  192.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |160.000  |0.000  |0.000  |  160.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |165.000  |0.000  |0.000  |  165.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |517.000  |0.000  |0.000  |  517.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+
+Admin+> show pmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Partition Map Analysis (2024-08-21 12:28:14 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node| Cluster Key|~~~~~~~~~~~~Partitions~~~~~~~~~~~~
+         |                                                |            |Primary|Secondary|Unavailable|Dead
+~~       |172.32.0.79:3000                                |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.1.105:3000                               |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.7.25:3000                                |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.8.190:3000                               |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |                                                |            |     ~~|       ~~|         ~~|  ~~
+mydata   |172.33.35.102:3000                              |39A2BCE70658|      0|        0|       4096|   0
+mydata   |172.33.46.58:3000                               |39A2BCE70658|      0|        0|       4096|   0
+mydata   |ip-172-33-42-240.eu-west-3.compute.internal:3000|39A2BCE70658|      0|        0|       4096|   0
+mydata   |                                                |            |      0|        0|      12288|   0
+```
+At this stage your client cannot access any partitions. To resolve this you will need to issue some operator commands once sure the system is stable.
+Essentually you are going to remove all nodes on rack '32' from the roster. 
+
+```text
+Admin+> manage roster remove nodes A541@32 A445@32 A333@32 A332@32  ns mydata
+
+Node(s) successfully removed from pending-roster.
+
+Run "manage recluster" for your changes to take affect.
+Admin+> manage recluster
+Successfully started recluster
+
+Admin+> show roster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-21 12:29:03 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                            Node|        Node ID|Namespace|         Current Roster|         Pending Roster|         Observed Nodes
+172.32.1.105:3000                               |000000000000000|~~       |~~                     |~~                     |~~
+172.32.8.190:3000                               |000000000000000|~~       |~~                     |~~                     |~~
+172.32.7.25:3000                                |000000000000000|~~       |~~                     |~~                     |~~
+172.32.0.79:3000                                |000000000000000|~~       |~~                     |~~                     |~~
+172.33.46.58:3000                               |A250           |mydata   |A829@33,A476@33,A250@33|A829@33,A476@33,A250@33|A829@33,A476@33,A250@33
+ip-172-33-42-240.eu-west-3.compute.internal:3000|A476           |mydata   |A829@33,A476@33,A250@33|A829@33,A476@33,A250@33|A829@33,A476@33,A250@33
+172.33.35.102:3000                              |*A829          |mydata   |A829@33,A476@33,A250@33|A829@33,A476@33,A250@33|A829@33,A476@33,A250@33
+Number of rows: 7
+
+Admin+> show pmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Partition Map Analysis (2024-08-21 12:29:11 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node| Cluster Key|~~~~~~~~~~~~Partitions~~~~~~~~~~~~
+         |                                                |            |Primary|Secondary|Unavailable|Dead
+~~       |172.32.0.79:3000                                |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.1.105:3000                               |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.7.25:3000                                |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |172.32.8.190:3000                               |          ~~|     ~~|       ~~|         ~~|  ~~
+~~       |                                                |            |     ~~|       ~~|         ~~|  ~~
+mydata   |172.33.35.102:3000                              |E6BE8E200C70|   1366|     1365|          0|   0
+mydata   |172.33.46.58:3000                               |E6BE8E200C70|   1365|     1365|          0|   0
+mydata   |ip-172-33-42-240.eu-west-3.compute.internal:3000|E6BE8E200C70|   1365|     1366|          0|   0
+mydata   |                                                |            |   4096|     4096|          0|   0
+Number of rows: 7
+```
+At this point your client should be able to write data. However, lets verify the overall record count.
+
+```text
+# After recluster we have 517 records as before
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:29:31 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.32.0.79:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.1.105:3000                              |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.7.25:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.8.190:3000                              |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                               |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |364.000  |195.000  |169.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |331.000  |158.000  |173.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |339.000  |164.000  |175.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |  1.034 K|517.000  |517.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+```
+
+Insert some additional test data before reviving rack '32' in London.
+
+```bash
+python3.8 app.py
+Connected to Server
+Timeout reached. Exiting loop.
+```
+
+```text
+# We now have 778 records
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:44:51 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+~~       |172.32.0.79:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.1.105:3000                              |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.7.25:3000                               |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |172.32.8.190:3000                              |  ~~|    ~~|         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+~~       |                                               |    |      |         ~~|       ~~|       ~~|       ~~|         ~~|     ~~|     ~~|         ~~|     ~~|     ~~
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |557.000  |295.000  |262.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |498.000  |250.000  |248.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |501.000  |233.000  |268.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |  1.556 K|778.000  |778.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+```
+
+You have been reliably informed the outage has been rectified. Bring all the nodes in rack '32' back online.
+
+```text
+Admin+> manage roster stage observed A541@32,A445@32,A333@32,A332@32 ns mydata
+Pending roster now contains observed nodes.
+Run "manage recluster" for your changes to take affect.
+
+Admin+> manage recluster
+Successfully started recluster
+
+Admin+> show racks
+~Racks (2024-08-21 12:48:07 UTC)~~
+Namespace|Rack|              Nodes
+         |  ID|
+mydata   |  32|A541,A445,A333,A332
+mydata   |  33|A829,A476,A250
+Number of rows: 2
+
+Admin+> show pmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Partition Map Analysis (2024-08-21 12:48:13 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                            Node| Cluster Key|~~~~~~~~~~~~Partitions~~~~~~~~~~~~
+         |                                                |            |Primary|Secondary|Unavailable|Dead
+mydata   |172.32.0.79:3000                                |4AC63FB091A3|    109|      915|          0|   0
+mydata   |172.32.1.105:3000                               |4AC63FB091A3|    103|      921|          0|   0
+mydata   |172.32.7.25:3000                                |4AC63FB091A3|    111|      913|          0|   0
+mydata   |172.32.8.190:3000                               |4AC63FB091A3|     99|      925|          0|   0
+mydata   |172.33.35.102:3000                              |4AC63FB091A3|   1213|      179|          0|   0
+mydata   |172.33.46.58:3000                               |4AC63FB091A3|   1226|      185|          0|   0
+mydata   |ip-172-33-42-240.eu-west-3.compute.internal:3000|4AC63FB091A3|   1235|      167|          0|   0
+mydata   |                                                |            |   4096|     4205|          0|   0
+Number of rows: 7
+
+Admin+> show roster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Roster (2024-08-21 12:48:19 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                            Node| Node|Namespace|                                         Current Roster|                                         Pending Roster|                                         Observed Nodes
+                                                |   ID|         |                                                       |                                                       |
+172.33.46.58:3000                               |A250 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+172.32.8.190:3000                               |A332 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+172.32.1.105:3000                               |A333 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+172.32.7.25:3000                                |A445 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+ip-172-33-42-240.eu-west-3.compute.internal:3000|A476 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+172.32.0.79:3000                                |A541 |mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+172.33.35.102:3000                              |*A829|mydata   |A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33|A829@33,A541@32,A476@33,A445@32,A333@32,A332@32,A250@33
+Number of rows: 7
+
+
+# 778 records
+Admin+> info
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:49:17 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~~~Objects~~~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
+         |                                               |  ID|Factor|           |  Records|   Master|    Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
+         |                                               |    |      |           |         |         |         |           |       |       |           |     Tx|     Rx
+mydata   |172.32.0.79:3000                               |  32|     2|    0.000  |195.000  |100.000  | 95.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.1.105:3000                              |  32|     2|    0.000  |209.000  |115.000  | 94.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.7.25:3000                               |  32|     2|    0.000  |176.000  |102.000  | 74.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.32.8.190:3000                              |  32|     2|    0.000  |198.000  |108.000  | 90.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.35.102:3000                             |  33|     2|    0.000  |291.000  |126.000  |165.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |172.33.42.240:3000                             |  33|     2|    0.000  |252.000  |104.000  |148.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000  |235.000  |123.000  |112.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+mydata   |                                               |    |      |    0.000  |  1.556 K|778.000  |778.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
+Number of rows: 7
+```
+
+Voila! - Looks good to me.
+
+
 
 #### Automating Network Partition Scenarios
 
