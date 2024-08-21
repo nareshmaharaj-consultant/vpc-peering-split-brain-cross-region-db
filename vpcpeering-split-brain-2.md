@@ -171,13 +171,13 @@ ssh -o IdentitiesOnly=yes -i aws-instance-key-paris-1.pem ubuntu@13.38.38.248
 
 Congratulations, your second region is complete.
 
-#### VPC Peering - Stretched Network
+#### Network Peering - Stretched Network
 
 The following diagram shows what we intend to achieve with our cross-regional network. We will use AWS's VPC peering to achieve this seamlessly. We will test that we can reach each region with a simple yet powerful networking tool.
 
 ![aws-vpc-stretch.png](aws-vpc-stretch.png)
 
-- **Paris VPC** 🇫🇷
+- **Paris Region** 🇫🇷
     - Under Your VPCs &rarr; Peering Connections, create a new peering connection.
     - Name it 'my-pc-to-london-1'.
     - As the VPC ID (Requester), select the VPC we created earlier.
@@ -190,7 +190,7 @@ The following diagram shows what we intend to achieve with our cross-regional ne
   ![rtb-london-add-pc.png](rtb-london-add-pc.png)
 
 
-- **London VPC** 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+- **London Region** 🏴󠁧󠁢󠁥󠁮󠁧󠁿
     - Go to the London VPCs &rarr; Peering Connections and accept the request made from the Paris VPC. You might be prompted to update the routing table. If so, accept it.
     - Update the routing table:
         - Target: VPC peering
@@ -222,11 +222,11 @@ In this section, we will create a 6-node stretch cluster NoSQL DB, with each reg
 
 ![database-cross-region3.png](database-cross-region3.png)
 
-#### Create 6 ec2 database hosts 
+#### Create Database Hosts 
 
 For each region, create three nodes. Select the VPC you previously set up, enable public IP assignments, and use the same security group.
 
-#### EC2 database hosts in Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+#### EC2 Database Hosts Region London 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 
 Launch 3 x EC2 instance with the following settings:
 
@@ -243,7 +243,7 @@ Launch 3 x EC2 instance with the following settings:
 | Volumes                | Root Volume: 1x10GB-gp2, 1x8GB-gp3                                                            |
 
 
-#### EC2 database hosts in Region Paris 🇫🇷
+#### EC2 Database Hosts Region Paris 🇫🇷
 
 Launch 3 x EC2 instance with the following settings:
 
@@ -260,7 +260,7 @@ Launch 3 x EC2 instance with the following settings:
 | Volumes                | Root Volume: 1x10GB-gp2, 1x8GB-gp3                                                            |
 
 
-#### Install Aerospike DB
+#### Installing Aerospike NoSQL DB
 
 Log into each host in a single region using SSH and install Aerospike. There are comments in the file below to remind you about specific changes required for each host. Although there are several automation tools available, we will manually configure each of the six nodes to keep things simple and aid learning.
 
