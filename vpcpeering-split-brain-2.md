@@ -1149,13 +1149,12 @@ By now, you should be familiar with setting up VPCs across two regions and estab
 
 Next, create 4 EC2 instances in each region, but only install Aerospike on 7 of the nodes. This ensures an odd-sized cluster, which is crucial for this experiment. If you need guidance on this step, visit Day 2 - "Installing an Aerospike NoSQL DB as a Stretch Cluster." You'll find everything you need there.
 
-Once completed, you should have a strong consistency cluster with 2 racks, numbered 32 and 33.
+Once completed, you should have strong consistency enabled with 2 racks numbered 32 and 33.
 
-Now, add some test data. We covered this on Day 3, so feel free to reuse the same code, updating only the seed host addresses
-
+Now it's time to insert some test data. We covered this on Day 3, so feel free to reuse the same code, updating only the seed host addresses.
 ![odd-split-as-cluster-1.png](odd-split-as-cluster-1.png)
 
-Before adding data, verify the current state of the cluster. You'll notice that there is no data present at this stage.
+Before adding any data, verify the current state of the cluster. There should be no data present at this stage.
 ```text
 # 4:3 split over 2 racks '32' and '33'
 
@@ -1173,21 +1172,21 @@ mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000 
 mydata   |          
 ```
 
-Now insert some testdata using your Python Application
+Insert some test records using your Python Application
 ```bash
 python3.8 app.py
 Connected to Server
 Timeout reached. Exiting loop.
 ```
 
-We have 271 records split across all nodes and regions. 
+For our first run we had 271 records split across all nodes and regions. 
 Interestingly if you sum up the master records in rack '32' [ 35+40+33+38=146] this 
 should equal the prole records in rack '33' [52+53+41=146]. 
 This is because we have 2 racks with replication factor of 2. 
 We expect under normal circumstances a write will be written to 
 rack r` with a copy written to rack r`` and in strong consistency we guarantee 
 no ambiguity about whether a record is written or not written.
-( Note: with replication factor 2 and a single rack available with more 2 or more nodes, clients will still be able write data successfully)
+( Note: with replication factor 2 and a single rack available with 2 or more nodes, clients will still be able write data successfully)
 
 ```text
 # 271 master records
@@ -1206,7 +1205,7 @@ mydata   |                                               |    |      |    0.000 
 Number of rows: 7
 ```
 
-Go ahead and insert more data and try doing some accounting checks like above.
+Go ahead and insert some more data and perhaps try doing some accounting checks like above.
 
 ```bash
 python3.8 app.py
@@ -1229,9 +1228,9 @@ mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000 
 mydata   |                                               |    |      |    0.000  |  1.034 K|517.000  |517.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
 Number of rows: 7
 ```
-Did you get 286 master records in rack 32? How many prole records did you get in rack 33?
+How many master records did you get in rack 32 and how many prole records did you get in rack 33?
 
-Bin bang! Go ahead and shutdown all 4 nodes in the London region. Your `asadm` info and pmap commands should look resemble below:
+Bin bang! Go ahead and shutdown all 4 nodes in the London region. Your `asadm` info and pmap commands should resemble below:
 ```text
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:26:44 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~Objects~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
@@ -1262,8 +1261,8 @@ mydata   |172.33.46.58:3000                               |39A2BCE70658|      0|
 mydata   |ip-172-33-42-240.eu-west-3.compute.internal:3000|39A2BCE70658|      0|        0|       4096|   0
 mydata   |                                                |            |      0|        0|      12288|   0
 ```
-At this stage your client cannot access any partitions. To resolve this you will need to issue some operator commands once sure the system is stable.
-Essentually you are going to remove all nodes on rack '32' from the roster. 
+At this stage your client cannot access any partitions. To resolve this you will need to issue an operator command once sure the system is stable.
+Essentially, remove all nodes on rack '32' from the roster. 
 
 ```text
 Admin+> manage roster remove nodes A541@32 A445@32 A333@32 A332@32  ns mydata
@@ -1301,7 +1300,7 @@ mydata   |ip-172-33-42-240.eu-west-3.compute.internal:3000|E6BE8E200C70|   1365|
 mydata   |                                                |            |   4096|     4096|          0|   0
 Number of rows: 7
 ```
-At this point your client should be able to write data. However, lets verify the overall record count.
+At this point your client should be able to write data. However, let's validate the overall record count.
 
 ```text
 # After recluster we have 517 records as before
@@ -1348,7 +1347,7 @@ mydata   |                                               |    |      |    0.000 
 Number of rows: 7
 ```
 
-You have been reliably informed the outage has been rectified. Bring all the nodes in rack '32' back online.
+Now you have been reliably informed the outage has been rectified, bring all the nodes in rack '32' back online.
 
 ```text
 Admin+> manage roster stage observed A541@32,A445@32,A333@32,A332@32 ns mydata
@@ -1410,10 +1409,7 @@ mydata   |ip-172-33-46-58.eu-west-3.compute.internal:3000|  33|     2|    0.000 
 mydata   |                                               |    |      |    0.000  |  1.556 K|778.000  |778.000  |    0.000  |0.000  |0.000  |    0.000  |0.000  |0.000
 Number of rows: 7
 ```
-
-Voila! - Looks good to me.
-
-
+Voila! - Looks good to me. We have all 778 records that we expected.
 
 #### Automating Network Partition Scenarios
 
