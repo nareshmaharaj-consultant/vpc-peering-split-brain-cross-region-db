@@ -1235,6 +1235,7 @@ Bin bang! Go ahead and shutdown all 4 nodes in the London region. Your `asadm` i
 ![odd-split-as-cluster-dc-failure-1.png](odd-split-as-cluster-dc-failure-1.png)
 
 ```text
+Admin+> info
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Namespace Object Information (2024-08-21 12:26:44 UTC)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Namespace|                                           Node|Rack|  Repl|Expirations|    Total|~~~~~~~~~~Objects~~~~~~~~~~|~~~~~~~~~Tombstones~~~~~~~~|~~~~Pending~~~~
          |                                               |  ID|Factor|           |  Records| Master|  Prole|Non-Replica| Master|  Prole|Non-Replica|~~~~Migrates~~~
