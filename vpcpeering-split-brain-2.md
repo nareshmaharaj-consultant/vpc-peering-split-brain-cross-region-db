@@ -688,12 +688,15 @@ hosts = [ ('172.33.7.44', 3000), ('172.32.5.239', 3000) ]
 ```
 To successfully install the Aerospike Python client library, you need to ensure that certain dependencies are met.
 
-> python3-devel <br>
-> python3.8 <br>
-> make
+ - python3-devel <br>
+ - python3.8 <br>
+ - make
+
+e.g. use the following to install
+>>>>> sudo yum install python3-devel python3.8 make -
 
 Next install Aerospike Client Lib using pip.
->sudo pip3.8 install aerospike
+>>>>>sudo pip3.8 install aerospike
 
 Here is the code:
 ```python
