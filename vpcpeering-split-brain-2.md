@@ -1117,7 +1117,7 @@ By incorporating these considerations into your application design and solution 
 
 In this article, we explored how a network split (split brain) can affect a distributed data system. We initially focused on an equal split across two regions, but there are numerous permutations of network partitions that can yield interesting and varied results. Here, we will discuss several scenarios:
 
-A: Uneven Subnet Split within a Region
+<B>A</B>: Uneven Subnet Split within a Region
 
 1. Configuration:
    - London Region: 6 nodes (2 in each of 3 subnets)
@@ -1131,7 +1131,7 @@ A: Uneven Subnet Split within a Region
     - With replication factor > 1 and a properly configured logical rack layout all the database partitions will be available in the sub-cluster of 5 subnets.
     - Nodes in the single subnet will continue to function normally but may not have any active database partitions.
 
-B: Uneven Split Across Regions
+<B>B</B>: Uneven Split Across Regions
 
 Catastrophic event where the majority of the London region's 4 nodes go permanently offline. What would the cluster state look like, and how would client connectivity be affected?
 
@@ -1147,7 +1147,7 @@ Catastrophic event where the majority of the London region's 4 nodes go permanen
     - With replication factor 2 or more and strong consistency manually resetting the roster to the available nodes will bring the system back online without data loss.
 
 
-We'll focus on this scenario as it presents an intriguing challenge.
+We'll have a detailed focus on this particular scenario as it presents an intriguing challenge. 
 
 By now, you should be familiar with setting up VPCs across two regions and establishing a peering connection between them. If you need a refresher, refer to Day 1 of the series titled "Simple Cross-Region Messaging Application."
 
@@ -1419,7 +1419,7 @@ Number of rows: 7
 ```
 Voila! - Looks good to me. We have all 778 records that we expected.
 
-C: Uneven Split Across Regions Multiple racks per region
+<B>C</B>: Uneven Split Across Regions Multiple racks per region
 
 Each region contains 2 racks, configured for strong consistency with a replication factor of 3. This replication factor ensures that a copy of the data is always written to the alternate data center. Having more than 1 rack allows for resilience against a data center or rack failure, which is a more realistic scenario.
 
