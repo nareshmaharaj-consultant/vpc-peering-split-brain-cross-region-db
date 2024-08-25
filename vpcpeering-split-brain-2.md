@@ -693,10 +693,10 @@ To successfully install the Aerospike Python client library, you need to ensure 
  - make
 
 e.g. use the following to install
->>>>> sudo yum install python3-devel python3.8 make -
+> sudo yum install python3-devel python3.8 make -
 
 Next install Aerospike Client Lib using pip.
->>>>>sudo pip3.8 install aerospike
+>sudo pip3.8 install aerospike
 
 Here is the code:
 ```python
@@ -770,7 +770,7 @@ try:
 
     # Define the start time
     start_time = time.time()
-
+    count = 0
     while True:
         # Generate a random key
         key = (namespace, set, random.randint(0, 4095))
@@ -798,10 +798,10 @@ try:
 
         # Put the record into the Aerospike database
         client.put(key, bins, policy=write_policy)
-
+        count = count + 1
         # Check if the current time has exceeded the timeout
         if time.time() - start_time > timeout:
-            print("Timeout reached. Exiting loop.")
+            print("Duration reached. Records[r/u]:",count)
             break
 
         # Sleep for 200 milliseconds
