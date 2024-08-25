@@ -693,7 +693,7 @@ To successfully install the Aerospike Python client library, you need to ensure 
  - make
 
 e.g. use the following to install
-> sudo yum install python3-devel python3.8 make -
+> sudo yum install python3-devel python3.8 make -y
 
 Next install Aerospike Client Lib using pip.
 >sudo pip3.8 install aerospike
@@ -1117,7 +1117,7 @@ By incorporating these considerations into your application design and solution 
 
 In this article, we explored how a network split (split brain) can affect a distributed data system. We initially focused on an equal split across two regions, but there are numerous permutations of network partitions that can yield interesting and varied results. Here, we will discuss several scenarios:
 
-Uneven Subnet Split within a Region
+A: Uneven Subnet Split within a Region
 
 1. Configuration:
    - London Region: 6 nodes (2 in each of 3 subnets)
@@ -1131,7 +1131,9 @@ Uneven Subnet Split within a Region
     - With replication factor > 1 and a properly configured logical rack layout all the database partitions will be available in the sub-cluster of 5 subnets.
     - Nodes in the single subnet will continue to function normally but may not have any active database partitions.
 
-Uneven Split Across Regions
+B: Uneven Split Across Regions
+
+Catastrophic event where the majority of the London region's 4 nodes go permanently offline. What would the cluster state look like, and how would client connectivity be affected?
 
 1. Configuration:
     - London Region: 4 nodes
@@ -1139,14 +1141,11 @@ Uneven Split Across Regions
 
 2. Network Partition:
     - Split between the two regions.
-
-3. Expected Outcome:
-    - The London region will have more nodes and maintain a majority.
-      - All database partitions will be available with logical racks and replication factor > 1.
-    - The Paris region, with fewer nodes, may experience reduced availability and performance.
-      - Most likely will not have any active database partitions.
     
-4. Imagine a catastrophic event where the majority of the London region's 4 nodes go permanently offline. What would the cluster state look like, and how would client connectivity be affected?
+3. Expected Outcome:
+    - Data will be at rest in the minorty Paris cluster but unavailable
+    - With replication factor 2 or more and strong consistency manually resetting the roster to the available nodes will bring the system back online without data loss.
+
 
 We'll focus on this scenario as it presents an intriguing challenge.
 
@@ -1419,6 +1418,39 @@ mydata   |                                               |    |      |    0.000 
 Number of rows: 7
 ```
 Voila! - Looks good to me. We have all 778 records that we expected.
+
+C: Uneven Split Across Regions Multiple racks per region
+
+Each region contains 2 racks, configured for strong consistency with a replication factor of 3. This replication factor ensures that a copy of the data is always written to the alternate data center. Having more than 1 rack allows for resilience against a data center or rack failure, which is a more realistic scenario.
+
+1. Configuration:
+    - London Region: 4 nodes ( 2 racks )
+    - Paris Region: 3 nodes ( 2 racks )
+
+2. Network Partition:
+    - Split between the two regions.
+
+3. Expected Outcome:
+    - Data will be at rest in the minorty Paris cluster but unavailable
+    - With replication factor 3 or more and strong consistency manually resetting the roster to the available nodes will bring the system back online without data loss.
+
+
+![rf3-multiple-racks-2dcs-2.png](rf3-multiple-racks-2dcs-2.png)
+
+Under normal circumstances, when writing a record with a replication factor of 3 (rf:3), the master write and replicas can be distributed across any of the 4 racks. Since each region has only 2 racks, at least one copy is guaranteed to be written to a different rack within the other region.
+
+See the possible combinations below:
+
+> [100,101,102]<BR>
+> [100,101,103]<BR>
+> [100,102,103]<BR>
+> [101,102,103]
+
+To bring the minority cluster online, you will need to reassign the 3 nodes in Paris.
+
+After manually re-rostering to the new remaining nodes, the cluster is now operational as below.
+
+![rf3-multiple-racks-1dcs-failure-1.png](rf3-multiple-racks-1dcs-failure-1.png)
 
 #### Automating Network Partition Scenarios
 
