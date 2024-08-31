@@ -19,12 +19,12 @@ For instance, day 1, you'll be exploring Virtual Private Networks and Peering,
 while on day 2, you'll take on the role of a DBA, each day introducing you to different challenges.
 
 
--  **Day 1** - Simple cross region messaging application
--  **Day 2** - Installing an Aerospike NoSQL DB as a Stretch Cluster
--  **Day 3** - Building a Python Application to insert test Data
--  **Day 4** - Split Brain network partitioning
--  **Day 5** - Partition Management Strong Consistency
--  **Day 6** - (an optional bonus day)
+-  **Part 1** - Simple cross region messaging application
+-  **Part 2** - Installing an Aerospike NoSQL DB as a Stretch Cluster
+-  **Part 3** - Building a Python Application to insert test Data
+-  **Part 4** - Split Brain network partitioning
+-  **Part 5** - Partition Management Strong Consistency
+-  **Wrap up** - What's next
 
 ## Overview
 
@@ -1115,7 +1115,10 @@ By incorporating these considerations into your application design and solution 
 
 #### Exploring Different Network Partition Scenarios
 
-In this article, we explored how a network split (split brain) can affect a distributed data system. We initially focused on an equal split across two regions, but there are numerous permutations of network partitions that can yield interesting and varied results. Here, we will discuss several scenarios:
+In this article, we explored how a network split (split brain) can affect a distributed data system. 
+We initially focused on an equal split across two regions, 
+but there are numerous permutations of network partitions that can yield interesting and varied results. 
+Here, we discuss a few of these scenarios.
 
 <B>A</B>: Uneven subnet split within a region
 
